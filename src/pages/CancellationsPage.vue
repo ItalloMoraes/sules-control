@@ -77,7 +77,7 @@ const confirm_ = (m: string) => window.confirm(m)
   <ModalBox :open="eff.open" title="Efetivar estorno" @close="eff.open = false">
     <p class="mb-3 text-sm text-mute">Informe o valor efetivamente descontado e a data em que ocorreu.</p>
     <div class="grid gap-3 sm:grid-cols-2"><div><label class="label">Valor descontado</label><input v-model.number="eff.amount" type="number" step="0.01" class="input" /></div>
-      <div><label class="label">Data do desconto</label><input v-model="eff.date" type="date" class="input" /></div></div>
+      <div><label class="label">Data do desconto</label><UDate v-model="eff.date" class="input" /></div></div>
     <div class="mt-4 flex justify-end gap-2"><button class="btn" @click="eff.open = false">Voltar</button><button class="btn btn-primary" @click="confirmEff">Confirmar desconto</button></div>
   </ModalBox>
 </template>

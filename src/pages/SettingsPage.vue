@@ -45,9 +45,9 @@ async function addHoliday() {
       </div>
       <div><label class="label">Percentual sugerido da seguradora (%)</label><input v-model.number="f.suggested_insurer_percent" type="number" step="0.01" class="input" /></div>
       <div><label class="label">Seguradora padrão</label>
-        <select v-model="f.default_insurer_id" class="input"><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></select></div>
+        <USelect v-model="f.default_insurer_id" class="input"><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect></div>
       <div><label class="label">Meta de comissão líquida mede</label>
-        <select v-model="f.goal_net_basis" class="input"><option value="generated">Comissão originalmente gerada</option><option value="after_reversals">Resultado após estornos efetivados</option></select></div>
+        <USelect v-model="f.goal_net_basis" class="input"><option value="generated">Comissão originalmente gerada</option><option value="after_reversals">Resultado após estornos efetivados</option></USelect></div>
       <div class="flex gap-2"><button class="btn btn-primary" @click="save">Salvar</button><button class="btn" @click="toggle">Alternar tema ({{ theme === 'dark' ? 'escuro' : 'claro' }})</button></div>
     </div>
     <div class="space-y-4">
@@ -59,7 +59,7 @@ async function addHoliday() {
         <div class="flex gap-2"><input v-model="newProduct" class="input" placeholder="Novo produto" /><button class="btn" @click="add('products', newProduct, () => (newProduct = ''))">Adicionar</button></div></div>
       <div class="card"><h2 class="mb-2 font-bold">Feriados (afetam dias úteis nas projeções)</h2>
         <p class="mb-2 text-sm text-mute">{{ data.holidays.length }} cadastrados</p>
-        <div class="flex gap-2"><input v-model="newHoliday" type="date" class="input" /><button class="btn" @click="addHoliday">Adicionar</button></div></div>
+        <div class="flex gap-2"><UDate v-model="newHoliday" class="input" /><button class="btn" @click="addHoliday">Adicionar</button></div></div>
     </div>
   </div>
 </template>

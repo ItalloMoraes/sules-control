@@ -50,7 +50,7 @@ onMounted(() => load().catch(e => run(() => Promise.reject(e), '')))
   <div class="mb-4 grid gap-4 md:grid-cols-2">
     <form v-reveal class="card grid grid-cols-3 gap-2" @submit.prevent="saveOne">
       <h2 class="col-span-3 font-bold">Registrar um mês</h2>
-      <div><label class="label" for="cm">Mês</label><input id="cm" v-model="f.month" type="month" class="input" required /></div>
+      <div><label class="label" for="cm">Mês</label><UDate month id="cm" v-model="f.month" class="input" required /></div>
       <div><label class="label" for="cl">Leads</label><input id="cl" v-model.number="f.leads" type="number" min="0" class="input" required /></div>
       <div><label class="label" for="cv">Vendas</label><input id="cv" v-model.number="f.sales" type="number" min="0" class="input" required /></div>
       <button class="btn btn-primary col-span-3">Salvar (substitui o mês, se já existir)</button>

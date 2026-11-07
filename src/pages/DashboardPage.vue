@@ -3,6 +3,7 @@ import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useData } from '@/stores/data'
 import { brl, dateBR, monthEnd, monthLabel, monthStart, todayISO } from '@/utils/format'
+import { project } from '@/utils/projections'
 import { monthKeys, monthPeriod, round2, summarize, type Period } from '@/utils/finance'
 import PageHeader from '@/components/PageHeader.vue'
 import StatCard from '@/components/StatCard.vue'
@@ -14,6 +15,7 @@ const data = useData()
 const hour = new Date().getHours()
 const greet = computed(() => `${hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'}, ${(data.settings?.broker_name ?? '').split(' ')[0]}`.replace(/, $/, '')), router = useRouter()
 const today = todayISO()
+const proj = computed(() => project(data.dataset, today, new Set(data.holidays)))
 const f = reactive({ from: monthStart(today), to: monthEnd(today), insurer: '', product: '', origin: '', status: '' })
 const period = computed<Period>(() => ({ from: f.from, to: f.to }))
 const filt = computed(() => (s: typeof data.sales[number]) =>
@@ -29,7 +31,7 @@ const keys = computed(() => monthKeys(new Date(Date.UTC(+f.to.slice(0, 4), +f.to
 const series = computed(() => keys.value.map(k => summarize(data.dataset, monthPeriod(k), filt.value)))
 const labels = computed(() => keys.value.map(k => monthLabel(k + '-01')))
 
-const C = { gold: '#E2B24A', pos: '#4FC3A1', neg: '#EF6B5B', info: '#6AA7F2', warn: '#E8A33D' }
+const C = { gold: '#1E8A44', pos: '#34C759', neg: '#FF453A', info: '#8FD6B0', warn: '#FF9F0A' }
 const line = (title: string, vals: number[], color: string): ChartConfiguration => ({ type: 'line', data: { labels: labels.value, datasets: [{ label: title, data: vals, borderColor: color, backgroundColor: color + '33', tension: .3, fill: true }] } })
 const charts = computed(() => ({
   sales: line('Vendas emitidas', series.value.map(s => s.issuedCount), C.info),
@@ -52,11 +54,11 @@ const charts = computed(() => ({
 <template>
   <PageHeader :title="greet" sub="Apuração pela data da venda; a prévia lista pelos cadastros mais recentes." />
   <div class="card mb-4 grid gap-2 sm:grid-cols-4 lg:grid-cols-7">
-    <input v-model="f.from" type="date" class="input" aria-label="De" /><input v-model="f.to" type="date" class="input" aria-label="Até" />
-    <select v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></select>
-    <select v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></select>
-    <select v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></select>
-    <select v-model="f.status" class="input" aria-label="Status"><option value="">Status</option><option value="pendente">Pendente</option><option value="emitida">Emitida</option><option value="cancelada">Cancelada</option></select>
+    <UDate v-model="f.from" class="input" aria-label="De" /><UDate v-model="f.to" class="input" aria-label="Até" />
+    <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
+    <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
+    <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
+    <USelect v-model="f.status" class="input" aria-label="Status"><option value="">Status</option><option value="pendente">Pendente</option><option value="emitida">Emitida</option><option value="cancelada">Cancelada</option></USelect>
   </div>
   <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
     <StatCard label="Comissão líquida gerada" :value="brl(sum.net)" tone="gold" :hint="`${sum.issuedCount} emitidas de ${sum.salesCount} vendas`" />
@@ -67,6 +69,12 @@ const charts = computed(() => ({
     <StatCard label="Comissão bruta" :value="brl(sum.gross)" />
     <StatCard label="Perdida por cancelamentos" :value="brl(sum.lostCommission)" tone="warn" />
     <StatCard label="Estornos pendentes" :value="brl(sum.reversalsPending)" tone="neg" />
+  </div>
+  <div v-reveal class="card mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div><div class="text-xs text-mute">Projeção do mês (cenário provável)</div>
+      <div class="num font-display text-2xl font-semibold text-gold">{{ brl(proj.scenarios.provavel.net) }}</div>
+      <div class="text-xs text-mute">Entre {{ brl(proj.scenarios.conservador.net) }} e {{ brl(proj.scenarios.otimista.net) }} · {{ proj.remainingBizDays }} dias úteis restantes</div></div>
+    <router-link to="/projecoes" class="btn">Ver projeções</router-link>
   </div>
   <div class="mb-6 grid gap-4 lg:grid-cols-2">
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Evolução das vendas</h2><BaseChart :config="charts.sales" /></div>

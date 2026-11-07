@@ -43,14 +43,14 @@ async function save() {
 </script>
 <template>
   <PageHeader title="Metas" sub="Contam apenas vendas emitidas e não canceladas. Estornos não reduzem a quantidade.">
-    <input type="month" class="input" :value="month.slice(0,7)" @change="month = (($event.target as HTMLInputElement).value || month.slice(0,7)) + '-01'" aria-label="Mês" />
+    <UDate month class="input" :model-value="month.slice(0, 7)" aria-label="Mês" @update:model-value="month = $event + '-01'" />
   </PageHeader>
   <div class="card mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
     <div><label class="label">Qtd. de seguros</label><input v-model.number="g.target_count" type="number" class="input" /></div>
     <div><label class="label">Prêmios (R$)</label><input v-model.number="g.target_premium" type="number" class="input" /></div>
     <div><label class="label">Comissão bruta (R$)</label><input v-model.number="g.target_gross" type="number" class="input" /></div>
     <div><label class="label">Comissão líquida (R$)</label><input v-model.number="g.target_net" type="number" class="input" /></div>
-    <div><label class="label">Meta líquida mede</label><select v-model="g.net_basis" class="input"><option value="generated">Gerada originalmente</option><option value="after_reversals">Após estornos efetivados</option></select></div>
+    <div><label class="label">Meta líquida mede</label><USelect v-model="g.net_basis" class="input"><option value="generated">Gerada originalmente</option><option value="after_reversals">Após estornos efetivados</option></USelect></div>
     <div class="sm:col-span-2 lg:col-span-5"><button class="btn btn-primary" @click="save">Salvar metas</button></div>
   </div>
   <div class="grid gap-3 md:grid-cols-2">

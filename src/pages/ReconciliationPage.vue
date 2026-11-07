@@ -145,10 +145,10 @@ const pendingAttention = computed(() => rows.value.filter(r => ['divergencia', '
     <p v-if="pendingAttention" class="mb-3 text-sm text-warn">{{ pendingAttention }} registro(s) de atenção ainda não analisados.</p>
     <div class="card mb-3 grid gap-2 sm:grid-cols-5">
       <input v-model="filters.q" class="input sm:col-span-2" placeholder="Cliente, proposta, apólice, endosso, produto, tipo" aria-label="Filtrar" />
-      <select v-model="filters.cls" class="input" aria-label="Filtro rápido"><option value="">Todos</option><option value="atencao">Precisam de atenção</option><option value="conferido">Conferidos</option>
+      <USelect v-model="filters.cls" class="input" aria-label="Filtro rápido"><option value="">Todos</option><option value="atencao">Precisam de atenção</option><option value="conferido">Conferidos</option>
         <option value="divergencia">Divergências</option><option value="nao_cadastrado">Não cadastrados</option><option value="nao_consta_no_relatorio">Não constam no relatório</option>
-        <option value="movimentacao_especial">Movimentações especiais</option><option value="endosso">Endossos</option><option value="cancelamento">Cancelamentos</option><option value="duplicado">Duplicados</option></select>
-      <div class="flex gap-1"><input v-model="filters.from" type="date" class="input" aria-label="Vigência de" /><input v-model="filters.to" type="date" class="input" aria-label="Vigência até" /></div>
+        <option value="movimentacao_especial">Movimentações especiais</option><option value="endosso">Endossos</option><option value="cancelamento">Cancelamentos</option><option value="duplicado">Duplicados</option></USelect>
+      <div class="flex gap-1"><UDate v-model="filters.from" class="input" aria-label="Vigência de" /><UDate v-model="filters.to" class="input" aria-label="Vigência até" /></div>
       <button class="btn" @click="filters.dir = filters.dir === 'asc' ? 'desc' : 'asc'">Vigência {{ filters.dir === 'asc' ? '↑' : '↓' }}</button>
     </div>
     <div class="card overflow-x-auto p-0"><table class="tbl">
@@ -188,8 +188,8 @@ const pendingAttention = computed(() => rows.value.filter(r => ['divergencia', '
           <button class="btn btn-primary" @click="saveAnalysis">Marcar como analisado</button>
           <button v-if="sel.production_report_items" class="btn" @click="openEdit">Corrigir dado extraído</button>
           <button v-if="sel.production_report_items && !sel.sale_id" class="btn" @click="create.open = true; newClient()">Cadastrar venda a partir deste registro</button></div>
-        <div v-if="sel.production_report_items" class="flex gap-2"><select v-model="linkTo" class="input" aria-label="Venda para vincular"><option value="">Vincular manualmente a uma venda…</option>
-          <option v-for="s in data.sales" :key="s.id" :value="s.id">{{ dateBR(s.sale_date) }} · {{ s.clients?.full_name }} · {{ brl(s.premium) }} · {{ s.proposal_number ?? 's/ proposta' }}</option></select>
+        <div v-if="sel.production_report_items" class="flex gap-2"><USelect v-model="linkTo" class="input" aria-label="Venda para vincular"><option value="">Vincular manualmente a uma venda…</option>
+          <option v-for="s in data.sales" :key="s.id" :value="s.id">{{ dateBR(s.sale_date) }} · {{ s.clients?.full_name }} · {{ brl(s.premium) }} · {{ s.proposal_number ?? 's/ proposta' }}</option></USelect>
           <button class="btn" @click="linkSale">Vincular</button></div>
         <p class="text-xs text-mute">Nenhuma ação aqui altera vendas, recebimentos ou estornos existentes. Comissão negativa no PDF não vira estorno automático: registre o desconto em Cancelamentos.</p>
       </div>
@@ -207,10 +207,10 @@ const pendingAttention = computed(() => rows.value.filter(r => ['divergencia', '
 
     <ModalBox :open="create.open" title="Cadastrar venda faltante" @close="create.open = false">
       <div class="grid gap-3 sm:grid-cols-2">
-        <div><label class="label">Cliente</label><select v-model="create.client_id" class="input"><option v-for="c in data.clients" :key="c.id" :value="c.id">{{ c.full_name }}</option></select></div>
-        <div><label class="label">Produto</label><select v-model="create.product_id" class="input"><option value="">Selecione</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></select></div>
-        <div><label class="label">Data da venda (confirme; não é a data de vigência)</label><input v-model="create.sale_date" type="date" class="input" /></div>
-        <div><label class="label">Status</label><select v-model="create.status" class="input"><option value="emitida">Emitida</option><option value="pendente">Pendente</option></select></div></div>
+        <div><label class="label">Cliente</label><USelect v-model="create.client_id" class="input"><option v-for="c in data.clients" :key="c.id" :value="c.id">{{ c.full_name }}</option></USelect></div>
+        <div><label class="label">Produto</label><USelect v-model="create.product_id" class="input"><option value="">Selecione</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect></div>
+        <div><label class="label">Data da venda (confirme; não é a data de vigência)</label><UDate v-model="create.sale_date" class="input" /></div>
+        <div><label class="label">Status</label><USelect v-model="create.status" class="input"><option value="emitida">Emitida</option><option value="pendente">Pendente</option></USelect></div></div>
       <p class="mt-2 text-xs text-mute">Prêmio, % da seguradora, proposta e apólice vêm do relatório. O % do corretor é o vigente nas configurações.</p>
       <div class="mt-3 flex justify-end gap-2"><button class="btn" @click="create.open = false">Cancelar</button><button class="btn btn-primary" @click="createSale">Cadastrar e vincular</button></div>
     </ModalBox>

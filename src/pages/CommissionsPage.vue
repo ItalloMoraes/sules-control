@@ -27,9 +27,9 @@ const totals = computed(() => ({
     <StatCard label="Recebido" :value="brl(totals.received)" tone="pos" />
     <StatCard label="Pendente" :value="brl(totals.pending)" tone="warn" />
   </div>
-  <select v-model="status" class="input mb-3 max-w-xs" aria-label="Situação financeira">
+  <USelect v-model="status" class="input mb-3 max-w-xs" aria-label="Situação financeira">
     <option value="">Todas as situações</option><option value="pendente">Pendente</option>
-    <option value="parcialmente_recebido">Parcialmente recebido</option><option value="recebido">Recebido</option><option value="cancelada">Cancelada</option></select>
+    <option value="parcialmente_recebido">Parcialmente recebido</option><option value="recebido">Recebido</option><option value="cancelada">Cancelada</option></USelect>
   <div class="card overflow-x-auto p-0"><table class="tbl">
     <thead><tr><th>Venda</th><th>Cliente</th><th class="text-right">Gerada</th><th class="text-right">Recebida</th><th class="text-right">Pendente</th><th>Situação</th></tr></thead>
     <tbody><tr v-for="r in rows" :key="r.s.id" class="cursor-pointer" @click="router.push('/vendas/' + r.s.id)">

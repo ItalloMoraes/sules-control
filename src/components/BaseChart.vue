@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Chart, registerables, type ChartConfiguration } from 'chart.js'
+import { Chart, registerables, type ChartConfiguration, type ScriptableContext } from 'chart.js'
 Chart.register(...registerables)
 
 const props = defineProps<{ config: ChartConfiguration; height?: number }>()
@@ -8,21 +8,57 @@ const emit = defineEmits<{ (e: 'pick', index: number, dataset: number): void }>(
 const el = ref<HTMLCanvasElement>()
 let chart: Chart | null = null
 
+const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif'
+const compact = (n: number) => new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
+const alpha = (hex: string, a: number) => {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex)
+  if (!m) return hex
+  const n = parseInt(m[1], 16)
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`
+}
+
+// Visual limpo: barras arredondadas, linhas suaves com degradê, rosca fina, grade discreta.
 function themed(cfg: ChartConfiguration): ChartConfiguration {
   const css = getComputedStyle(document.documentElement)
-  const mute = `rgb(${css.getPropertyValue('--c-mute')})`
-  const line = `rgb(${css.getPropertyValue('--c-line')})`
+  const tok = (v: string) => css.getPropertyValue(v).trim()
+  const mute = `rgb(${tok('--c-mute')})`, text = `rgb(${tok('--c-text')})`, panel = `rgb(${tok('--c-panel')})`
+  const border = `rgb(${tok('--c-line')})`, grid = `rgb(${tok('--c-line')} / 0.7)`
   const copy = structuredClone(cfg) as ChartConfiguration
+  const round = copy.type === 'doughnut' || copy.type === 'pie'
+  for (const ds of copy.data.datasets as unknown as Record<string, unknown>[]) {
+    if (copy.type === 'bar') Object.assign(ds, { borderRadius: 8, borderSkipped: false, maxBarThickness: 26, categoryPercentage: 0.7, barPercentage: 0.85 })
+    else if (copy.type === 'line') {
+      const base = String(ds.borderColor)
+      Object.assign(ds, { tension: 0.4, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: base, pointHoverBorderColor: panel, pointHoverBorderWidth: 2,
+        backgroundColor: (c: ScriptableContext<'line'>) => {
+          const a = c.chart.chartArea
+          if (!a) return 'transparent'
+          const g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom)
+          g.addColorStop(0, alpha(base, 0.28)); g.addColorStop(1, alpha(base, 0))
+          return g
+        } })
+    } else if (round) Object.assign(ds, { borderWidth: 0, spacing: 4, borderRadius: 10, hoverOffset: 6 })
+  }
+  const tick = { color: mute, font: { family: FONT, size: 11 } }
   copy.options = {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { labels: { color: mute, boxWidth: 10 } } },
-    scales: copy.type === 'doughnut' || copy.type === 'pie' ? undefined : {
-      x: { ticks: { color: mute }, grid: { color: line } },
-      y: { ticks: { color: mute }, grid: { color: line } },
+    animation: { duration: 700, easing: 'easeOutQuart' },
+    interaction: round ? undefined : { mode: 'index', intersect: false },
+    cutout: round ? '74%' : undefined,
+    layout: { padding: round ? 6 : 0 },
+    plugins: {
+      legend: { position: round ? 'bottom' : 'top', align: round ? 'center' : 'end',
+        labels: { color: mute, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16, font: { family: FONT, size: 12 } } },
+      tooltip: { backgroundColor: panel, titleColor: text, bodyColor: mute, borderColor: border, borderWidth: 1, cornerRadius: 12, padding: 12, boxPadding: 6,
+        usePointStyle: true, titleFont: { family: FONT, weight: 600 }, bodyFont: { family: FONT } },
     },
-    onClick: (_e, els) => { if (els[0]) emit('pick', els[0].index, els[0].datasetIndex) },
+    scales: round ? undefined : {
+      x: { grid: { display: false }, border: { display: false }, ticks: tick },
+      y: { grid: { color: grid }, border: { display: false }, ticks: { ...tick, padding: 8, callback: (v: string | number) => compact(Number(v)) } },
+    },
+    onClick: (_e: unknown, els: { index: number; datasetIndex: number }[]) => { if (els[0]) emit('pick', els[0].index, els[0].datasetIndex) },
     ...(copy.options ?? {}),
-  }
+  } as unknown as ChartConfiguration['options']
   return copy
 }
 function draw() {

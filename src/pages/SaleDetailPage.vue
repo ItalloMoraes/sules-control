@@ -102,7 +102,7 @@ async function addReversal() {
     <ModalBox :open="rec.open" title="Registrar recebimento" @close="rec.open = false">
       <div class="grid gap-3 sm:grid-cols-2">
         <div><label class="label">Valor recebido</label><input v-model.number="rec.amount" type="number" step="0.01" class="input" /></div>
-        <div><label class="label">Data</label><input v-model="rec.received_at" type="date" class="input" /></div>
+        <div><label class="label">Data</label><UDate v-model="rec.received_at" class="input" /></div>
         <div class="sm:col-span-2"><label class="label">Descrição ou referência</label><input v-model="rec.reference" class="input" /></div>
         <div class="sm:col-span-2"><label class="label">Observação</label><input v-model="rec.notes" class="input" /></div>
         <div class="sm:col-span-2"><label class="label">Justificativa (apenas se exceder o valor devido)</label><input v-model="rec.over" class="input" /></div>
@@ -111,15 +111,15 @@ async function addReversal() {
     </ModalBox>
     <ModalBox :open="cancel.open" title="Cancelar venda" @close="cancel.open = false">
       <p class="mb-3 text-sm text-mute">A venda e os recebimentos são preservados. {{ received > 0 ? 'Como já há comissão recebida, você poderá registrar estornos quando houver desconto ou devolução efetiva.' : 'Sem comissão recebida, não há estorno: o valor vira comissão perdida.' }}</p>
-      <div class="grid gap-3"><div><label class="label">Data do cancelamento</label><input v-model="cancel.cancelled_at" type="date" class="input" /></div>
+      <div class="grid gap-3"><div><label class="label">Data do cancelamento</label><UDate v-model="cancel.cancelled_at" class="input" /></div>
         <div><label class="label">Motivo</label><input v-model="cancel.reason" class="input" /></div></div>
       <div class="mt-4 flex justify-end gap-2"><button class="btn" @click="cancel.open = false">Voltar</button><button class="btn btn-danger" @click="cancelSale">Confirmar cancelamento</button></div>
     </ModalBox>
     <ModalBox :open="rev.open" title="Registrar estorno" @close="rev.open = false">
       <div class="grid gap-3 sm:grid-cols-2">
         <div><label class="label">Valor do estorno</label><input v-model.number="rev.amount" type="number" step="0.01" class="input" /></div>
-        <div><label class="label">Status</label><select v-model="rev.status" class="input"><option value="pendente">Pendente</option><option value="efetivado">Efetivado (desconto já ocorreu)</option></select></div>
-        <div v-if="rev.status === 'efetivado'"><label class="label">Data do desconto/devolução</label><input v-model="rev.reversal_date" type="date" class="input" /></div>
+        <div><label class="label">Status</label><USelect v-model="rev.status" class="input"><option value="pendente">Pendente</option><option value="efetivado">Efetivado (desconto já ocorreu)</option></USelect></div>
+        <div v-if="rev.status === 'efetivado'"><label class="label">Data do desconto/devolução</label><UDate v-model="rev.reversal_date" class="input" /></div>
         <div class="sm:col-span-2"><label class="label">Justificativa</label><input v-model="rev.justification" class="input" /></div>
       </div>
       <div class="mt-4 flex justify-end gap-2"><button class="btn" @click="rev.open = false">Cancelar</button><button class="btn btn-primary" @click="addReversal">Registrar</button></div>

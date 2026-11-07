@@ -56,6 +56,11 @@ main .animate-on-scroll { --ry: 10px; --rb: 3px; animation-duration: .32s; anima
 .modal-enter-from { opacity: 0; }
 .modal-enter-from .card { transform: translateY(8px) scale(.98); }
 
+/* popovers (listas e calendário) */
+.pop-enter-active { transition: opacity .12s ease-out, transform .12s cubic-bezier(.22, 1, .36, 1); }
+.pop-enter-from { opacity: 0; transform: translateY(-4px) scale(.98); }
+.input:focus-within { border-color: rgb(var(--c-gold)); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   .wr-w { opacity: 1; filter: none; transform: none; }

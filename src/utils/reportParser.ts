@@ -132,7 +132,7 @@ export function parseReportText(lines: string[]): ParsedReport {
   const unparsed: { line_no: number; text: string }[] = []
   let periodStart = null as string | null
   let periodEnd = null as string | null
-  let totals: ParsedReport['totals'] = null
+  let totals = null as ParsedReport['totals']
 
   lines.forEach((ln, idx) => {
     const lineNo = idx + 1
