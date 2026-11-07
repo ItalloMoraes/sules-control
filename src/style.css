@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --c-ink: 245 245 247; --c-panel: 255 255 255; --c-raise: 240 242 240; --c-line: 224 228 225;
+  --c-text: 29 29 31; --c-mute: 110 110 115; --c-gold: 30 138 68;
+  --c-pos: 21 128 61; --c-neg: 200 50 50; --c-warn: 180 100 10; --c-info: 13 128 120;
+}
+.dark {
+  --c-ink: 10 15 12; --c-panel: 22 28 24; --c-raise: 31 39 34; --c-line: 44 54 47;
+  --c-text: 236 242 238; --c-mute: 150 165 155; --c-gold: 74 201 110;
+  --c-pos: 74 201 110; --c-neg: 240 110 100; --c-warn: 235 170 70; --c-info: 94 205 190;
+}
+body { @apply bg-ink text-text font-sans antialiased; }
+h1, h2, h3 { @apply font-display; }
+.num { font-variant-numeric: tabular-nums; }
+
+@layer components {
+  .card { @apply bg-panel border border-line/70 rounded-2xl p-4 shadow-[0_1px_2px_rgb(0_0_0/.04),0_10px_28px_-16px_rgb(0_0_0/.12)]; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full border border-line bg-panel px-4 py-1.5 text-sm font-medium text-text transition-colors hover:border-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold disabled:opacity-50; }
+  .btn-primary { @apply border-gold bg-gold text-white hover:brightness-110 dark:text-[#04210f]; }
+  .btn-danger { @apply border-neg text-neg hover:bg-neg/10; }
+  .input { @apply w-full rounded-xl border border-line bg-ink px-3 py-2 text-sm text-text placeholder:text-mute focus:border-gold focus:outline-none; }
+  .label { @apply mb-1 block text-xs text-mute; }
+  .badge { @apply inline-flex items-center rounded px-2 py-0.5 text-xs font-medium; }
+  .tbl { @apply w-full text-sm; }
+  .tbl th { @apply border-b border-line px-3 py-2 text-left text-xs font-medium text-mute whitespace-nowrap; }
+  .tbl td { @apply border-b border-line/60 px-3 py-2 align-top; }
+  .tbl tbody tr:hover { @apply bg-raise/60; }
+}
+
+
+/* ---------- Movimento ---------- */
+/* animation-on-scroll: começa pausado, o observer adiciona .animate */
+@keyframes animationIn {
+  0% { opacity: 0; transform: translateY(var(--ry, 30px)); filter: blur(var(--rb, 8px)); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.animate-on-scroll { animation: animationIn .8s ease-out both; animation-play-state: paused; }
+.animate-on-scroll.animate { animation-play-state: running; }
+/* Telas de uso diário (Emil): curto e discreto */
+main .animate-on-scroll { --ry: 10px; --rb: 3px; animation-duration: .32s; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
+
+/* scroll-scrubbed-word-reveal: opacidade, blur e deslocamento vêm de --wp (0 a 1) */
+.wr-w { display: inline-block; opacity: calc(.18 + .82 * var(--wp, 1)); filter: blur(calc((1 - var(--wp, 1)) * 6px));
+  transform: translateY(calc((1 - var(--wp, 1)) * .15em)); }
+
+/* design-motion-principles: feedback de clique rápido; navegação frequente só com fade curto */
+.btn { transition: transform .1s ease-out, border-color .15s, background-color .15s; }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.page-enter-active { transition: opacity .12s ease-out; }
+.page-enter-from { opacity: 0; }
+.modal-enter-active { transition: opacity .16s ease-out; }
+.modal-enter-active .card { transition: transform .16s cubic-bezier(.22, 1, .36, 1); }
+.modal-enter-from { opacity: 0; }
+.modal-enter-from .card { transform: translateY(8px) scale(.98); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .wr-w { opacity: 1; filter: none; transform: none; }
+}
