@@ -130,8 +130,8 @@ const HEADER = /(cliente|dt\.?\s*in\.?\s*vig|proposta|ap[óo]lice|neg\/itens|pr[
 export function parseReportText(lines: string[]): ParsedReport {
   const items: ParsedItem[] = []
   const unparsed: { line_no: number; text: string }[] = []
-  let periodStart: string | null = null
-  let periodEnd: string | null = null
+  let periodStart = null as string | null
+  let periodEnd = null as string | null
   let totals: ParsedReport['totals'] = null
 
   lines.forEach((ln, idx) => {

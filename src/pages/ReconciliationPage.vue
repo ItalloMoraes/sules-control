@@ -89,7 +89,7 @@ const saveEdit = () => run(async () => {
   const before = { client_name: i.client_name, proposal_number: i.proposal_number, policy_number: i.policy_number, endorsement_number: i.endorsement_number, premium: i.premium, commission: i.commission, commission_percent: i.commission_percent }
   const next = { client_name: edit.client_name, proposal_number: edit.proposal_number || null, policy_number: edit.policy_number || null, endorsement_number: edit.endorsement_number || null, premium: edit.premium, commission: edit.commission, commission_percent: edit.commission_percent }
   const merged = { ...i, ...next }
-  fail((await supabase.from('production_report_items').update({ ...next, item_key: itemKey(merged as ParsedItem), corrected: { before, at: new Date().toISOString(), why: just.value || 'correção manual' } }).eq('id', i.id)).error)
+  fail((await supabase.from('production_report_items').update({ ...next, item_key: itemKey(merged as unknown as ParsedItem), corrected: { before, at: new Date().toISOString(), why: just.value || 'correção manual' } }).eq('id', i.id)).error)
   Object.assign(i, next); edit.open = false
   await persist(r, recompute(r, r.sale_id))
 }, 'Dado corrigido (valor original preservado)')

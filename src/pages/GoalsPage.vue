@@ -43,7 +43,7 @@ async function save() {
 </script>
 <template>
   <PageHeader title="Metas" sub="Contam apenas vendas emitidas e não canceladas. Estornos não reduzem a quantidade.">
-    <input v-model="month" type="month" class="input" :value="month.slice(0,7)" @change="month = ($event.target as HTMLInputElement).value + '-01'" aria-label="Mês" />
+    <input type="month" class="input" :value="month.slice(0,7)" @change="month = (($event.target as HTMLInputElement).value || month.slice(0,7)) + '-01'" aria-label="Mês" />
   </PageHeader>
   <div class="card mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
     <div><label class="label">Qtd. de seguros</label><input v-model.number="g.target_count" type="number" class="input" /></div>
