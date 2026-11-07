@@ -1,66 +1,132 @@
 # Sules Control
 
-Sistema web individual para vendas de seguros, comissões, recebimentos, cancelamentos/estornos, conferência mensal de produção (PDF Digital Suhai), metas, projeções e relatórios.
+Sistema web para corretores de seguro auto: vendas, emissão de apólices, comissões, recebimentos, cancelamentos e estornos, conferência mensal da produção (PDF da seguradora), metas, projeções e relatórios.
 
-Stack: Vue 3 + TypeScript + Vite + Tailwind · Supabase (PostgreSQL, Auth, RLS, Storage) · Chart.js · Vercel.
+## Funcionalidades
 
-## Colocar no ar
+- **Vendas e apólices:** cadastro da venda com cliente criado na hora, depois emissão da apólice (a venda passa de *pendente* a *emitida*).
+- **Comissões:** bruta e líquida calculadas no banco, com o percentual do corretor congelado em cada venda; recebimentos e saldo de caixa.
+- **Cancelamentos e estornos:** sem exclusão destrutiva; só estorno efetivado entra no resultado.
+- **Conferência mensal:** importação do PDF da seguradora, comparação com as vendas cadastradas e validação pelo "Total período" do próprio relatório.
+- **Dashboard, metas, projeções, comparativos e relatórios** (PDF e Excel).
+- **Clientes:** busca por nome com o histórico completo de vendas, recebimentos e cancelamentos.
+- **Notificações** de apólices pendentes (a cada 5 horas), **notas e mensagens prontas**, **registro de conversão de leads** e **assistente de chat**.
+- **E-mail automático** com os dados da venda para um destinatário configurável.
 
-1. **Supabase**: crie um projeto. Em *Authentication → Providers*, desative "Allow new users to sign up" (sem cadastro público) e crie seu usuário manualmente (*Authentication → Users → Add user*).
-2. **SQL Editor**: rode, nesta ordem, `supabase/migrations/001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql`.
-3. `cp .env.example .env` e preencha URL e chave **anon** (nunca a `service_role`).
-4. `npm install && npm run dev`. No primeiro login o sistema pede seu nome e cria a Suhai como seguradora padrão e os produtos Moto, Auto e Digital.
-5. **Vercel**: importe o repositório do GitHub, defina `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`. O `vercel.json` já cuida das rotas.
-6. **Backup**: ative os backups diários do Supabase (plano Pro) ou agende `pg_dump`.
+## Tecnologias
 
-## Movimento (skills aplicadas)
+Vue 3 · TypeScript · Vite · Tailwind CSS · Chart.js · Supabase (PostgreSQL, Auth, RLS, Edge Functions) · Vercel.
 
-| Onde | Skill | Detalhe |
-|---|---|---|
-| Entrada (hero) | `ambient-section-particles` | `components/AmbientParticles.vue`: canvas limitado à seção, modo recycle, 1 loop rAF, pausa fora da tela e com aba oculta, estático com *reduced motion* |
-| Entrada (manifesto) | `scroll-scrubbed-word-reveal` | `components/WordReveal.vue`: palavras reveladas pelo scroll, cópia intacta para leitores de tela |
-| Cards, gráficos, tabelas | `animation-on-scroll` | `motion/reveal.ts` (`v-reveal`, `v-reveal.stagger`) + keyframe `animationIn` em `style.css`; roda uma vez |
-| Telas de uso diário | `design-motion-principles` | Emil como lente principal: reveals curtos (320 ms, 10 px), troca de página só com fade de 120 ms, modal 160 ms, clique `scale(.97)`; expressivo apenas na entrada |
+## Estrutura
 
-Tudo respeita `prefers-reduced-motion`.
+```
+src/
+  components/   componentes reutilizáveis (calendário, listas, gráficos, ícones)
+  composables/  lógica compartilhada (tema, avisos, popovers)
+  layouts/      estrutura da área logada
+  motion/       animações de entrada por scroll
+  pages/        telas
+  router/       rotas e proteção de acesso
+  services/     Supabase, e-mail, leitura de PDF, conferência
+  stores/       estado global (Pinia)
+  utils/        regras de negócio e testes (__tests__)
+supabase/
+  migrations/   banco de dados (rodar em ordem)
+  functions/    funções de servidor: chat e send-policy-email
+```
 
-## Novidades (chat, e-mail ao RH, notificações)
+## Como rodar localmente
 
-1. **Banco:** rode também `supabase/migrations/004_features.sql` no SQL Editor (conversão de leads, notas e notificações). Para os avisos saírem mesmo com o site fechado, ative a extensão **pg_cron** em *Database → Extensions* antes de rodar; sem ela, os avisos são gerados enquanto o site estiver aberto.
-2. **Funções do Supabase** (chat e e-mail), com a [Supabase CLI](https://supabase.com/docs/guides/cli):
+**Pré-requisitos:** Node.js 22.6 ou superior e uma conta no [Supabase](https://supabase.com).
+
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
+2. No Supabase, crie um projeto. Em *Authentication*, desative o cadastro público de novos usuários e crie o seu usuário manualmente.
+3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql`.
+4. Crie o arquivo de ambiente e preencha:
+   ```bash
+   cp .env.example .env
+   ```
+5. Inicie:
+   ```bash
+   npm run dev
+   ```
+   No primeiro acesso o sistema pede o nome do corretor e cria a seguradora padrão, os produtos iniciais e as configurações.
+
+## Variáveis de ambiente
+
+**Aplicação** (arquivo `.env`; use somente a chave pública, nunca a chave secreta/`service_role`):
+
+| Variável | Descrição |
+|---|---|
+| `VITE_SUPABASE_URL` | URL do projeto Supabase |
+| `VITE_SUPABASE_ANON_KEY` | Chave pública (*publishable* / *anon*) |
+
+**Funções de servidor** (cadastradas como *secrets* no Supabase, não vão no `.env`):
+
+| Variável | Descrição |
+|---|---|
+| `ANTHROPIC_API_KEY` | Chave da API usada pelo chat. `ANTHROPIC_MODEL` é opcional |
+| `SMTP_USER` / `SMTP_PASS` | Login da caixa de e-mail que envia as vendas |
+| `SMTP_HOST` / `SMTP_PORT` | Opcionais. Padrão: `smtp.titan.email` e `465` (SSL) |
+| `RH_EMAIL` | Destinatário dos e-mails de venda |
+
+## Funções de servidor e agendamento
+
+Com a [Supabase CLI](https://supabase.com/docs/guides/cli):
 
 ```bash
 supabase login
 supabase link --project-ref SEU_PROJECT_REF
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-... \
-  SMTP_USER=voce@seudominio.com SMTP_PASS=senha-do-email RH_EMAIL=rh@empresa.com
+supabase secrets set ANTHROPIC_API_KEY=... SMTP_USER=... SMTP_PASS=... RH_EMAIL=...
 supabase functions deploy chat
 supabase functions deploy send-policy-email
 ```
 
-- `ANTHROPIC_API_KEY`: chave de API criada em console.anthropic.com (cobrança própria, separada da assinatura do Claude.ai). Modelo opcional: `ANTHROPIC_MODEL`.
-- E-mail Titan (HostGator): servidor `smtp.titan.email`, porta **465** (SSL), usuário e senha da própria caixa. O Supabase bloqueia as portas 25 e 587.
-- O e-mail ao RH sai ao **cadastrar uma venda nova** (não ao editar) e traz cliente, produto, prêmio, os percentuais e a comissão líquida. Se falhar, a venda continua salva e aparece um aviso.
+- O Supabase bloqueia as portas SMTP 25 e 587; use a **465**.
+- Os avisos de apólice pendente são gerados por uma rotina no banco agendada com **pg_cron**. Ative a extensão em *Database → Extensions* antes de rodar `004_features.sql`. Sem ela, os avisos são gerados apenas com o sistema aberto.
+- O e-mail é enviado ao **cadastrar** uma venda nova. Se falhar, a venda permanece salva.
 
-## Testes
+## Testes e build
 
-`npm test` roda os testes da lógica de negócio (cálculo de comissões, estornos, parser do PDF, conferência, duplicidade). Exigem Node 22.6+.
+```bash
+npm test         # regras de negócio: comissões, estornos, leitura do PDF, conferência
+npm run build    # checagem de tipos + build de produção
+```
 
-## Onde está cada regra
+## Deploy
+
+1. Importe o repositório na [Vercel](https://vercel.com).
+2. Cadastre `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` em *Environment Variables*.
+3. Publique. O `vercel.json` já configura as rotas da aplicação.
+4. No Supabase, em *Authentication → URL Configuration*, informe o endereço da Vercel em *Site URL*.
+
+Ative os backups do banco no Supabase (ou agende `pg_dump`).
+
+## Segurança
+
+- Todas as tabelas usam *Row Level Security*: cada usuário acessa apenas os próprios dados.
+- Chaves privadas (API de IA, senha de e-mail) ficam somente nas funções de servidor.
+- Alterações financeiras exigem justificativa e geram histórico de auditoria.
+- `.env`, `node_modules` e `dist` não são versionados.
+
+## Regras de negócio
 
 | Regra | Onde |
 |---|---|
-| Percentual do corretor congelado na venda | `sales.broker_percent` + trigger `sales_before_write` (nenhum trigger em `settings` toca `sales`) |
-| Comissões bruta/líquida | trigger no banco + `utils/finance.ts` |
+| Percentual do corretor congelado na venda | `sales.broker_percent` + trigger `sales_before_write` |
+| Comissões bruta e líquida | trigger no banco + `utils/finance.ts` |
 | Alteração financeira exige justificativa e gera histórico | `sales_before_write` → `audit_logs` |
 | Sem exclusão destrutiva | triggers `*_prevent_delete`, `block_delete`, arquivamento de clientes |
 | Sem estorno de dinheiro não recebido | `reversals_check` |
 | Cancelamento antes do recebimento = comissão perdida | `cancellations_before_insert` |
-| Só estorno efetivado impacta resultado; data do estorno = data do impacto | `utils/finance.ts#summarize` |
-| Importação não cria vendas nem recebimentos | `services/reconciliation.ts` |
-| Duplicidade (arquivo e registro) | `file_hash` único + `item_key` |
-| Dt. In. Vig. ≠ sale_date | colunas separadas; diferença só informativa |
+| Só estorno efetivado impacta o resultado | `utils/finance.ts#summarize` |
+| Importação do PDF não cria vendas nem recebimentos | `services/reconciliation.ts` |
+| Duplicidade de arquivo e de registro | `file_hash` único + `item_key` |
+| Início de vigência é informativo, separado da data da venda | colunas distintas em `sales` |
 
-## Leitor do PDF
+## Interface e acessibilidade
 
-O parser (`utils/reportParser.ts`) foi ajustado e testado com o relatório real *Digital Suhai · Itallo Cesar · Outubro/2026* (14 documentos). Na tela de importação ele compara o que leu com o "Total período" impresso no próprio PDF (quantidade de documentos, prêmio e comissão) e avisa se não bater. Linhas não reconhecidas continuam listadas, nada é descartado em silêncio.
+Layout claro e escuro, menu lateral recolhível e animações discretas (partículas e texto revelado por scroll apenas na tela de entrada). Todas as animações respeitam `prefers-reduced-motion`.
