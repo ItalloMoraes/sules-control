@@ -4,7 +4,7 @@ import { supabase } from '@/services/supabase'
 import { useData } from '@/stores/data'
 import { brl, dateBR, monthEnd, monthStart, todayISO } from '@/utils/format'
 import { round2 } from '@/utils/finance'
-import { toCSV, toPDF, toXLSX, type Table } from '@/utils/exporters'
+import { toCSV, toPDF, toXLSX, toXLSXBook, type Table } from '@/utils/exporters'
 import PageHeader from '@/components/PageHeader.vue'
 
 const data = useData()
@@ -26,6 +26,12 @@ const table = computed<Table>(() => {
     for (const s of sales.value) { const k = key(s) ?? '—'; const x = g.get(k) ?? { n: 0, p: 0, b: 0, l: 0 }; x.n++; x.p += s.premium; x.b += s.gross_commission; x.l += s.net_commission; g.set(k, x) }
     return { title: 'Relatório comercial', headers: [`Por ${f.groupBy}`, 'Vendas', 'Prêmios', 'Comissão bruta', 'Comissão líquida'], rows: [...g].map(([k, x]) => [k, x.n, m(x.p), m(x.b), m(x.l)]) }
   }
+  if (f.type === 'detalhado') {
+    const origin = (o: string) => (o === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria')
+    return { title: 'Relatório detalhado', headers: ['Data venda', 'Cliente', 'CPF', 'Produto', 'Seguradora', 'Placa', 'Proposta', 'Apólice', 'Origem', 'Status', 'Prêmio', '% seguradora', 'Comissão bruta', '% corretor', 'Comissão líquida'],
+      rows: sales.value.map(s => [dateBR(s.sale_date), s.clients?.full_name ?? '', s.clients?.cpf ?? '', s.products?.name ?? '', s.insurers?.name ?? '', s.plate ?? '', s.proposal_number ?? '', s.policy_number ?? '',
+        origin(s.origin), s.status, m(s.premium), `${s.insurer_percent}%`, m(s.gross_commission), `${s.broker_percent}%`, m(s.status === 'cancelada' ? 0 : s.net_commission)]) }
+  }
   if (f.type === 'financeiro') {
     return { title: 'Relatório financeiro', headers: ['Data venda', 'Cliente', 'Comissão recebida', 'Estornos efetivados'],
       rows: sales.value.map(s => [dateBR(s.sale_date), s.clients?.full_name ?? '', m(s.status === 'cancelada' ? 0 : s.net_commission),
@@ -40,15 +46,34 @@ const table = computed<Table>(() => {
   return { title: 'Relatório de conferência mensal', headers: ['Mês', 'Arquivo', 'Importados', 'Conferidos', 'Divergências', 'Não cadastrados', 'Ausentes no relatório', 'Endossos', 'Cancelamentos'],
     rows: recon.value.map(r => { const s = r.production_reconciliations[0]?.summary ?? {}; return [dateBR(r.reference_month).slice(3), r.file_name, s.total ?? 0, s.conferido ?? 0, s.divergencia ?? 0, s.nao_cadastrado ?? 0, s.nao_consta_no_relatorio ?? 0, s.endossos ?? 0, s.cancelamentos ?? 0] }) }
 })
+const lastBackup = ref(localStorage.getItem('sc-last-backup') ?? '')
+function toTable(title: string, arr: Record<string, unknown>[]): Table {
+  const skip = new Set(['clients', 'insurers', 'products'])
+  const keys = arr.length ? Object.keys(arr[0]).filter(k => !skip.has(k) && (typeof arr[0][k] !== 'object' || arr[0][k] === null)) : []
+  return { title, headers: keys.length ? keys : ['(sem registros)'], rows: arr.map(o => keys.map(k => { const v = o[k]; return v == null ? '' : typeof v === 'boolean' ? (v ? 'sim' : 'não') : (v as string | number) })) }
+}
+/** Planilha com todos os dados, uma aba por assunto (valores numéricos, para conferir ou restaurar depois). */
+async function backupAll() {
+  const [conv, notes] = await Promise.all([supabase.from('conversions').select('*').order('reference_month'), supabase.from('quick_notes').select('title,body,pinned,updated_at')])
+  const rows = (x: unknown[] | null) => (x ?? []).map(o => ({ ...(o as Record<string, unknown>) }))
+  toXLSXBook([
+    toTable('Vendas', data.sales.map(s => ({ cliente: s.clients?.full_name ?? '', cpf: s.clients?.cpf ?? '', seguradora: s.insurers?.name ?? '', produto: s.products?.name ?? '', ...s }))),
+    toTable('Clientes', data.clients.map(c => ({ ...c }))), toTable('Cancelamentos', data.cancellations.map(c => ({ ...c }))),
+    toTable('Estornos', data.reversals.map(r => ({ ...r }))), toTable('Recebimentos', data.receipts.map(r => ({ ...r }))),
+    toTable('Metas', data.goals.map(g => ({ ...g }))), toTable('Conversão de leads', rows(conv.data)), toTable('Notas', rows(notes.data)),
+  ], `backup-sules-control-${todayISO()}`)
+  lastBackup.value = todayISO(); localStorage.setItem('sc-last-backup', lastBackup.value)
+}
 const name = computed(() => `${f.type}-${f.from}_a_${f.to}`)
 const sub = computed(() => `Período ${dateBR(f.from)} a ${dateBR(f.to)}`)
 </script>
 <template>
   <PageHeader title="Relatórios e exportações" sub="Exportações respeitam os filtros selecionados.">
-    <button class="btn" @click="toPDF(table, name, sub)">PDF</button><button class="btn" @click="toXLSX(table, name)">XLSX</button><button class="btn" @click="toCSV(table, name)">CSV</button>
+    <button class="btn btn-primary" @click="backupAll">Backup completo</button><button class="btn" @click="toPDF(table, name, sub, data.settings?.broker_name ?? '')">PDF</button><button class="btn" @click="toXLSX(table, name)">XLSX</button><button class="btn" @click="toCSV(table, name)">CSV</button>
   </PageHeader>
+  <p class="mb-3 text-xs text-mute">Último backup: {{ lastBackup ? dateBR(lastBackup) : 'ainda não feito' }}. O plano gratuito não tem backup automático; baixe uma cópia a cada poucos dias.</p>
   <div class="card mb-4 grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
-    <USelect v-model="f.type" class="input sm:col-span-2" aria-label="Relatório"><option value="comercial">Comercial</option><option value="financeiro">Financeiro</option><option value="cancelamentos">Cancelamentos</option><option value="conferencia">Conferência mensal</option></USelect>
+    <USelect v-model="f.type" class="input sm:col-span-2" aria-label="Relatório"><option value="comercial">Comercial</option><option value="financeiro">Financeiro</option><option value="detalhado">Detalhado (valores e percentuais)</option><option value="cancelamentos">Cancelamentos</option><option value="conferencia">Conferência mensal</option></USelect>
     <UDate v-model="f.from" class="input" aria-label="De" /><UDate v-model="f.to" class="input" aria-label="Até" />
     <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
     <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>

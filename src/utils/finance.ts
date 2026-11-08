@@ -41,8 +41,8 @@ export interface Dataset {
 }
 const within = (d: string | null | undefined, p: Period) => !!d && d >= p.from && d <= p.to
 
-/** Somente vendas emitidas contam como produção (pendentes e canceladas ficam de fora). */
-export const isProduction = (s: Sale) => s.status === 'emitida'
+/** A comissão conta desde o cadastro: pendentes e emitidas entram; canceladas ficam de fora (já descontadas). */
+export const isProduction = (s: Sale) => s.status !== 'cancelada'
 
 export interface Summary {
   salesCount: number; issuedCount: number; premium: number
@@ -64,13 +64,9 @@ export function summarize(ds: Dataset, p: Period, filter: (s: Sale) => boolean =
   const gross = round2(issued.reduce((a, s) => a + s.gross_commission, 0))
   const net = round2(issued.reduce((a, s) => a + s.net_commission, 0))
 
-  const received = round2(ds.receipts.filter(r => ids.has(r.sale_id) && within(r.received_at, p))
-    .reduce((a, r) => a + r.amount, 0))
-
-  const receivedBySale = new Map<string, number>()
-  for (const r of ds.receipts) receivedBySale.set(r.sale_id, (receivedBySale.get(r.sale_id) ?? 0) + r.amount)
-  const pending = round2(periodSales.filter(s => s.status === 'emitida')
-    .reduce((a, s) => a + pendingBalance(s, receivedBySale.get(s.id) ?? 0), 0))
+  // Sem lançamento de recebimentos: a comissão é considerada recebida assim que a venda é cadastrada.
+  const received = net
+  const pending = 0
 
   const cancsPeriod = ds.cancellations.filter(c => ids.has(c.sale_id) && within(c.cancelled_at, p))
   const lostCommission = round2(cancsPeriod.reduce((a, c) => a + c.lost_commission, 0))

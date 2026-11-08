@@ -57,7 +57,7 @@ export const useData = defineStore('data', () => {
   }))
   const receivedBySale = computed(() => {
     const m = new Map<string, number>()
-    for (const r of receipts.value) m.set(r.sale_id, (m.get(r.sale_id) ?? 0) + r.amount)
+    for (const s of sales.value) if (s.status !== 'cancelada') m.set(s.id, s.net_commission) // recebida = líquida
     return m
   })
   const clientName = (id: string) => clients.value.find(c => c.id === id)?.full_name ?? '—'

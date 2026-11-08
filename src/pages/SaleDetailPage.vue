@@ -66,17 +66,13 @@ async function addReversal() {
   <div v-if="sale">
     <PageHeader :title="sale.clients?.full_name ?? 'Venda'" :sub="`${sale.products?.name} · ${sale.insurers?.name} · ${dateBR(sale.sale_date)}`">
       <button v-if="sale.proposal_pdf_path" class="btn" @click="openPdf">Ver proposta</button>
-      <button v-if="sale.status !== 'cancelada'" class="btn" @click="rec.open = true">Registrar recebimento</button>
       <button v-if="sale.status !== 'cancelada'" class="btn btn-danger" @click="cancel.open = true">Cancelar venda</button>
       <button v-if="canc && received > 0" class="btn" @click="rev.open = true">Registrar estorno</button>
     </PageHeader>
-    <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div class="card"><div class="text-xs text-mute">Prêmio</div><div class="num font-bold">{{ brl(sale.premium) }}</div></div>
       <div class="card"><div class="text-xs text-mute">Bruta ({{ pct(sale.insurer_percent, 2) }})</div><div class="num font-bold">{{ brl(sale.gross_commission) }}</div></div>
       <div class="card"><div class="text-xs text-mute">Líquida ({{ pct(sale.broker_percent, 2) }})</div><div class="num font-bold text-gold">{{ brl(sale.net_commission) }}</div></div>
-      <div class="card"><div class="text-xs text-mute">Recebido</div><div class="num font-bold text-pos">{{ brl(received) }}</div></div>
-      <div class="card"><div class="text-xs text-mute">Saldo pendente</div><div class="num font-bold">{{ brl(pendingBalance(sale, received)) }}</div>
-        <StatusBadge :value="financialStatus(sale, received)" /></div>
     </div>
     <div class="mb-4 flex flex-wrap gap-2"><StatusBadge :value="sale.status" /><StatusBadge :value="sale.origin" />
       <span class="inline-flex items-center gap-0.5 text-sm text-mute">Proposta {{ sale.proposal_number ?? '—' }}<CopyBtn v-if="sale.proposal_number" :text="sale.proposal_number" label="Copiar proposta" /></span>

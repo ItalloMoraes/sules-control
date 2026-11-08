@@ -34,8 +34,6 @@ test('estornos parciais e múltiplos; impacto no mês do desconto, não da venda
   assert.equal(oct.reversalsEffective, 0)       // não retroage ao mês da venda
   assert.equal(nov.reversalsEffective, 100)
   assert.equal(nov.reversalsPending, 180)       // pendente não impacta resultado
-  assert.equal(nov.cashBalance, -100)
-  assert.equal(oct.cashBalance, 280)
 })
 test('cancelamento antes do recebimento: comissão perdida, sem estorno', () => {
   const ds = { sales: [sale({ status: 'cancelada' })], receipts: [],
@@ -45,4 +43,13 @@ test('cancelamento antes do recebimento: comissão perdida, sem estorno', () => 
   assert.equal(s.lostCommission, 280)
   assert.equal(s.reversalsEffective, 0)
   assert.equal(pendingBalance(ds.sales[0], 0), 0)
+})
+
+test('comissão conta já no cadastro: pendente entra, cancelada sai, recebida = líquida', () => {
+  const ds = { sales: [sale({ id: 'a', status: 'pendente' }), sale({ id: 'b', status: 'emitida' }), sale({ id: 'c', status: 'cancelada' })], receipts: [], cancellations: [], reversals: [] }
+  const s = summarize(ds, { from: '2026-10-01', to: '2026-10-31' })
+  assert.equal(s.net, 560)
+  assert.equal(s.received, 560)
+  assert.equal(s.pending, 0)
+  assert.equal(s.issuedCount, 2)
 })

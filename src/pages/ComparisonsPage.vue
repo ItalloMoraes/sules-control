@@ -27,9 +27,9 @@ const cols = computed<Col[]>(() => {
   return []
 })
 const metrics: [string, (s: Summary) => string][] = [
-  ['Vendas (emitidas)', s => String(s.issuedCount)], ['Prêmios', s => brl(s.premium)], ['Comissão bruta', s => brl(s.gross)],
-  ['Comissão líquida', s => brl(s.net)], ['Recebimentos', s => brl(s.received)], ['Estornos efetivados', s => brl(s.reversalsEffective)],
-  ['Resultado financeiro (caixa)', s => brl(s.cashBalance)], ['Ticket médio (prêmio)', s => brl(s.issuedCount ? s.premium / s.issuedCount : 0)],
+  ['Vendas', s => String(s.issuedCount)], ['Prêmios', s => brl(s.premium)], ['Comissão bruta', s => brl(s.gross)],
+  ['Comissão líquida', s => brl(s.net)], ['Estornos efetivados', s => brl(s.reversalsEffective)],
+  ['Ticket médio (prêmio)', s => brl(s.issuedCount ? s.premium / s.issuedCount : 0)],
   ['Taxa de cancelamento', s => (s.cancellationRate * 100).toFixed(1) + '%'],
 ]
 </script>
