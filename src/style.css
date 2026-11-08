@@ -65,3 +65,11 @@ main .animate-on-scroll { --ry: 10px; --rb: 3px; animation-duration: .32s; anima
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   .wr-w { opacity: 1; filter: none; transform: none; }
 }
+
+/* barra de rolagem no padrão do site */
+* { scrollbar-width: thin; scrollbar-color: rgb(var(--c-gold) / .45) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: rgb(var(--c-gold) / .45); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+/* barras de filtros: os campos nunca ficam espremidos */
+.filters { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }

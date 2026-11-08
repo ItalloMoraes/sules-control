@@ -13,6 +13,7 @@ export interface Client {
   email: string | null; notes: string | null; archived_at: string | null; created_at: string
 }
 export interface Sale {
+  proposal_pdf_path?: string | null
   id: string; client_id: string; insurer_id: string; product_id: string
   sale_date: string; policy_start_date: string | null
   vehicle_description: string | null; plate: string | null
@@ -21,7 +22,7 @@ export interface Sale {
   gross_commission: number; net_commission: number
   origin: Origin; status: SaleStatus; notes: string | null
   created_at: string; updated_at: string
-  clients?: { full_name: string } | null
+  clients?: { full_name: string; cpf?: string | null } | null
   insurers?: { name: string } | null
   products?: { name: string } | null
 }

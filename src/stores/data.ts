@@ -25,7 +25,7 @@ export const useData = defineStore('data', () => {
       supabase.from('insurers').select('*').order('name'),
       supabase.from('products').select('*').order('name'),
       supabase.from('clients').select('*').order('full_name'),
-      supabase.from('sales').select('*, clients(full_name), insurers(name), products(name)').order('created_at', { ascending: false }),
+      supabase.from('sales').select('*, clients(full_name, cpf), insurers(name), products(name)').order('created_at', { ascending: false }),
       supabase.from('commission_receipts').select('*').order('received_at', { ascending: false }),
       supabase.from('cancellations').select('*'),
       supabase.from('reversal_transactions').select('*').order('created_at', { ascending: false }),

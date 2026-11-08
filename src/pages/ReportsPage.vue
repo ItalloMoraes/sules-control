@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { supabase } from '@/services/supabase'
 import { useData } from '@/stores/data'
 import { brl, dateBR, monthEnd, monthStart, todayISO } from '@/utils/format'
-import { pendingBalance, round2 } from '@/utils/finance'
+import { round2 } from '@/utils/finance'
 import { toCSV, toPDF, toXLSX, type Table } from '@/utils/exporters'
 import PageHeader from '@/components/PageHeader.vue'
 
@@ -27,9 +27,9 @@ const table = computed<Table>(() => {
     return { title: 'Relatório comercial', headers: [`Por ${f.groupBy}`, 'Vendas', 'Prêmios', 'Comissão bruta', 'Comissão líquida'], rows: [...g].map(([k, x]) => [k, x.n, m(x.p), m(x.b), m(x.l)]) }
   }
   if (f.type === 'financeiro') {
-    return { title: 'Relatório financeiro', headers: ['Data venda', 'Cliente', 'Comissão gerada', 'Recebida', 'Pendente', 'Estornos efetivados'],
-      rows: sales.value.map(s => [dateBR(s.sale_date), s.clients?.full_name ?? '', m(s.status === 'cancelada' ? 0 : s.net_commission), m(data.receivedBySale.get(s.id) ?? 0),
-        m(pendingBalance(s, data.receivedBySale.get(s.id) ?? 0)), m(round2(data.reversals.filter(r => r.sale_id === s.id && r.status === 'efetivado').reduce((a, r) => a + r.amount, 0)))]) }
+    return { title: 'Relatório financeiro', headers: ['Data venda', 'Cliente', 'Comissão recebida', 'Estornos efetivados'],
+      rows: sales.value.map(s => [dateBR(s.sale_date), s.clients?.full_name ?? '', m(s.status === 'cancelada' ? 0 : s.net_commission),
+        m(round2(data.reversals.filter(r => r.sale_id === s.id && r.status === 'efetivado').reduce((a, r) => a + r.amount, 0)))]) }
   }
   if (f.type === 'cancelamentos') {
     return { title: 'Relatório de cancelamentos', headers: ['Data', 'Cliente', 'Motivo', 'Comissão perdida', 'Estornos pendentes', 'Estornos efetivados'],

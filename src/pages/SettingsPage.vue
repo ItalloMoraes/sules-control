@@ -27,6 +27,12 @@ async function add(table: 'insurers' | 'products', name: string, clear: () => vo
   if (!name.trim()) return
   if (await run(async () => { fail((await supabase.from(table).insert({ name: name.trim() })).error); await data.refresh() }, 'Cadastrado')) clear()
 }
+async function remove(table: 'insurers' | 'products', id: string, name: string) {
+  const used = data.sales.some(s => (table === 'insurers' ? s.insurer_id : s.product_id) === id)
+  if (used) { alert(`"${name}" já tem vendas cadastradas e por isso não pode ser apagada.`); return }
+  if (!confirm(`Apagar "${name}"?`)) return
+  await run(async () => { fail((await supabase.from(table).delete().eq('id', id)).error); await data.refresh() }, 'Apagado')
+}
 async function addHoliday() {
   if (!newHoliday.value) return
   if (await run(async () => { fail((await supabase.from('holidays').insert({ day: newHoliday.value })).error); await data.refresh() }, 'Feriado adicionado')) newHoliday.value = ''
@@ -52,10 +58,10 @@ async function addHoliday() {
     </div>
     <div class="space-y-4">
       <div class="card"><h2 class="mb-2 font-bold">Seguradoras</h2>
-        <ul class="mb-2 text-sm"><li v-for="i in data.insurers" :key="i.id">{{ i.name }} <span v-if="i.is_default" class="text-gold">(padrão)</span></li></ul>
+        <ul class="mb-2 text-sm"><li v-for="i in data.insurers" :key="i.id" class="flex items-center justify-between border-b border-line/60 py-1.5"><span>{{ i.name }} <span v-if="i.is_default" class="text-gold">(padrão)</span></span><button v-if="!i.is_default" class="btn btn-danger" @click="remove('insurers', i.id, i.name)">Apagar</button></li></ul>
         <div class="flex gap-2"><input v-model="newInsurer" class="input" placeholder="Nova seguradora" /><button class="btn" @click="add('insurers', newInsurer, () => (newInsurer = ''))">Adicionar</button></div></div>
       <div class="card"><h2 class="mb-2 font-bold">Produtos</h2>
-        <ul class="mb-2 text-sm"><li v-for="p in data.products" :key="p.id">{{ p.name }}</li></ul>
+        <ul class="mb-2 text-sm"><li v-for="p in data.products" :key="p.id" class="flex items-center justify-between border-b border-line/60 py-1.5"><span>{{ p.name }}</span><button class="btn btn-danger" @click="remove('products', p.id, p.name)">Apagar</button></li></ul>
         <div class="flex gap-2"><input v-model="newProduct" class="input" placeholder="Novo produto" /><button class="btn" @click="add('products', newProduct, () => (newProduct = ''))">Adicionar</button></div></div>
       <div class="card"><h2 class="mb-2 font-bold">Feriados (afetam dias úteis nas projeções)</h2>
         <p class="mb-2 text-sm text-mute">{{ data.holidays.length }} cadastrados</p>

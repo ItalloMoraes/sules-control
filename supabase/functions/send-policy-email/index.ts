@@ -33,11 +33,17 @@ Deno.serve(async req => {
     const html = `<table cellpadding="6" style="font-family:sans-serif;font-size:14px;border-collapse:collapse">${
       rows.map(([k, v]) => `<tr><td style="color:#666">${esc(k)}</td><td><b>${esc(v)}</b></td></tr>`).join('')}</table>`
 
+    // Anexa a proposta em PDF, se houver (lida com o token do usuário, respeitando o RLS do Storage).
+    const attachments: { filename: string; content: Uint8Array; contentType: string; encoding: string }[] = []
+    if (s.proposal_pdf_path) {
+      const { data: blob } = await sb.storage.from('proposals').download(s.proposal_pdf_path)
+      if (blob) attachments.push({ filename: `Proposta - ${(s.clients?.full_name ?? 'cliente').replace(/[^\w\s-]/g, '')}.pdf`, content: new Uint8Array(await blob.arrayBuffer()), contentType: 'application/pdf', encoding: 'binary' })
+    }
     const user = Deno.env.get('SMTP_USER')!
     const smtp = new SMTPClient({ connection: {
       hostname: Deno.env.get('SMTP_HOST') ?? 'smtp.titan.email', port: Number(Deno.env.get('SMTP_PORT') ?? 465), tls: true,
       auth: { username: user, password: Deno.env.get('SMTP_PASS')! } } })
-    await smtp.send({ from: user, to: Deno.env.get('RH_EMAIL')!, subject: `Nova venda: ${s.clients?.full_name ?? ''} · ${s.products?.name ?? ''}`, content: text, html })
+    await smtp.send({ from: user, to: Deno.env.get('RH_EMAIL')!, subject: `Nova venda: ${s.clients?.full_name ?? ''} · ${s.products?.name ?? ''}`, content: text, html, attachments })
     await smtp.close()
     return json({ ok: true })
   } catch (e) { return json({ error: (e as Error).message }, 500) }

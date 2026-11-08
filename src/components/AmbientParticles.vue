@@ -5,8 +5,8 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 const props = withDefaults(defineProps<{
   density?: number; maxCount?: number; gravity?: number; wind?: number
-  sway?: number; pointerRadius?: number; maxDpr?: number
-}>(), { density: 0.00004, maxCount: 60, gravity: -10, wind: 2, sway: 14, pointerRadius: 110, maxDpr: 2 })
+  sway?: number; pointerRadius?: number; maxDpr?: number; links?: number
+}>(), { density: 0.00004, maxCount: 60, gravity: -10, wind: 2, sway: 14, pointerRadius: 110, maxDpr: 2, links: 0 })
 
 type P = { x: number; y: number; r: number; v: number; ph: number; op: number; ox: number; oy: number }
 const canvas = ref<HTMLCanvasElement>()
@@ -34,11 +34,20 @@ function color() {
 function draw(t: number) {
   if (!ctx) return
   ctx.clearRect(0, 0, w, h)
-  for (const p of ps) {
+  const pts = ps.map(p => ({ x: p.x + Math.sin(t / 1250 + p.ph) * props.sway + p.ox, y: p.y + p.oy, r: p.r, op: p.op }))
+  if (props.links > 0) {
+    ctx.lineWidth = 0.8
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+      const d = Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)
+      if (d < props.links) {
+        ctx.strokeStyle = `rgba(${rgb},${(1 - d / props.links) * 0.22})`
+        ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke()
+      }
+    }
+  }
+  for (const p of pts) {
     ctx.fillStyle = `rgba(${rgb},${p.op})`
-    ctx.beginPath()
-    ctx.arc(p.x + Math.sin(t / 1250 + p.ph) * props.sway + p.ox, p.y + p.oy, p.r, 0, 6.2832)
-    ctx.fill()
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.2832); ctx.fill()
   }
 }
 function step(dt: number) {

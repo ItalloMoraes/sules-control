@@ -17,6 +17,12 @@ const alpha = (hex: string, a: number) => {
   return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`
 }
 
+function pctLabels(chart: Chart) {
+  const ds = chart.data.datasets[0], vals = (ds.data as number[]).map(Number), colors = ds.backgroundColor as string[]
+  const total = vals.reduce((a, b) => a + b, 0) || 1
+  return (chart.data.labels ?? []).map((l, i) => ({ text: `${l}  ${Math.round((vals[i] / total) * 100)}%`, fillStyle: colors[i], strokeStyle: colors[i], lineWidth: 0, hidden: !chart.getDataVisibility(i), index: i, pointStyle: 'circle' as const }))
+}
+
 // Visual limpo: barras arredondadas, linhas suaves com degradê, rosca fina, grade discreta.
 function themed(cfg: ChartConfiguration): ChartConfiguration {
   const css = getComputedStyle(document.documentElement)
@@ -26,10 +32,20 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
   const copy = structuredClone(cfg) as ChartConfiguration
   const round = copy.type === 'doughnut' || copy.type === 'pie'
   for (const ds of copy.data.datasets as unknown as Record<string, unknown>[]) {
-    if (copy.type === 'bar') Object.assign(ds, { borderRadius: 8, borderSkipped: false, maxBarThickness: 26, categoryPercentage: 0.7, barPercentage: 0.85 })
-    else if (copy.type === 'line') {
+    const hex = typeof ds.backgroundColor === 'string' && /^#/.test(ds.backgroundColor) ? ds.backgroundColor : ''
+    if (copy.type === 'bar') {
+      Object.assign(ds, { borderRadius: 8, borderSkipped: false, maxBarThickness: 26, categoryPercentage: 0.7, barPercentage: 0.85 })
+      if (hex) ds.backgroundColor = (c: ScriptableContext<'bar'>) => {   // degradê; o período mais recente fica em destaque
+        const a = c.chart.chartArea
+        if (!a) return hex
+        const last = c.dataIndex === (c.dataset.data.length - 1), g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom)
+        g.addColorStop(0, alpha(hex, last ? 1 : 0.8)); g.addColorStop(1, alpha(hex, last ? 0.7 : 0.4))
+        return g
+      }
+    } else if (copy.type === 'line') {
       const base = String(ds.borderColor)
-      Object.assign(ds, { tension: 0.4, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: base, pointHoverBorderColor: panel, pointHoverBorderWidth: 2,
+      Object.assign(ds, { tension: 0.4, borderWidth: 2.5, pointRadius: (c: ScriptableContext<'line'>) => (c.dataIndex === c.dataset.data.length - 1 ? 4.5 : 0),
+        pointHoverRadius: 5, pointBackgroundColor: base, pointBorderColor: panel, pointBorderWidth: 2, pointHoverBackgroundColor: base, pointHoverBorderColor: panel, pointHoverBorderWidth: 2,
         backgroundColor: (c: ScriptableContext<'line'>) => {
           const a = c.chart.chartArea
           if (!a) return 'transparent'
@@ -48,13 +64,13 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
     layout: { padding: round ? 6 : 0 },
     plugins: {
       legend: { position: round ? 'bottom' : 'top', align: round ? 'center' : 'end',
-        labels: { color: mute, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16, font: { family: FONT, size: 12 } } },
+        labels: { color: mute, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16, font: { family: FONT, size: 12 }, ...(round ? { generateLabels: pctLabels } : {}) } },
       tooltip: { backgroundColor: panel, titleColor: text, bodyColor: mute, borderColor: border, borderWidth: 1, cornerRadius: 12, padding: 12, boxPadding: 6,
         usePointStyle: true, titleFont: { family: FONT, weight: 600 }, bodyFont: { family: FONT } },
     },
     scales: round ? undefined : {
       x: { grid: { display: false }, border: { display: false }, ticks: tick },
-      y: { grid: { color: grid }, border: { display: false }, ticks: { ...tick, padding: 8, callback: (v: string | number) => compact(Number(v)) } },
+      y: { grid: { color: grid }, border: { display: false }, ticks: { ...tick, padding: 8, maxTicksLimit: 5, callback: (v: string | number) => compact(Number(v)) } },
     },
     onClick: (_e: unknown, els: { index: number; datasetIndex: number }[]) => { if (els[0]) emit('pick', els[0].index, els[0].datasetIndex) },
     ...(copy.options ?? {}),

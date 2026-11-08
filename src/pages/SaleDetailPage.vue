@@ -9,8 +9,15 @@ import { financialStatus, pendingBalance } from '@/utils/finance'
 import PageHeader from '@/components/PageHeader.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import ModalBox from '@/components/ModalBox.vue'
+import CopyBtn from '@/components/CopyBtn.vue'
+import { proposalUrl } from '@/services/proposals'
+import { notify } from '@/composables/useToast'
 
 const data = useData(), route = useRoute()
+const pdf = reactive({ open: false, url: '' })
+async function openPdf() {
+  try { pdf.url = await proposalUrl(sale.value!.proposal_pdf_path!); pdf.open = true } catch (e) { notify((e as Error).message, 'err') }
+}
 const id = computed(() => route.params.id as string)
 const sale = computed(() => data.sales.find(s => s.id === id.value))
 const receipts = computed(() => data.receipts.filter(r => r.sale_id === id.value))
@@ -58,6 +65,7 @@ async function addReversal() {
 <template>
   <div v-if="sale">
     <PageHeader :title="sale.clients?.full_name ?? 'Venda'" :sub="`${sale.products?.name} · ${sale.insurers?.name} · ${dateBR(sale.sale_date)}`">
+      <button v-if="sale.proposal_pdf_path" class="btn" @click="openPdf">Ver proposta</button>
       <button v-if="sale.status !== 'cancelada'" class="btn" @click="rec.open = true">Registrar recebimento</button>
       <button v-if="sale.status !== 'cancelada'" class="btn btn-danger" @click="cancel.open = true">Cancelar venda</button>
       <button v-if="canc && received > 0" class="btn" @click="rev.open = true">Registrar estorno</button>
@@ -71,7 +79,10 @@ async function addReversal() {
         <StatusBadge :value="financialStatus(sale, received)" /></div>
     </div>
     <div class="mb-4 flex flex-wrap gap-2"><StatusBadge :value="sale.status" /><StatusBadge :value="sale.origin" />
-      <span class="text-sm text-mute">Proposta {{ sale.proposal_number ?? '—' }} · Apólice {{ sale.policy_number ?? '—' }} · Placa {{ sale.plate ?? '—' }}</span></div>
+      <span class="inline-flex items-center gap-0.5 text-sm text-mute">Proposta {{ sale.proposal_number ?? '—' }}<CopyBtn v-if="sale.proposal_number" :text="sale.proposal_number" label="Copiar proposta" /></span>
+      <span class="inline-flex items-center gap-0.5 text-sm text-mute">Apólice {{ sale.policy_number ?? '—' }}<CopyBtn v-if="sale.policy_number" :text="sale.policy_number" label="Copiar apólice" /></span>
+      <span class="inline-flex items-center gap-0.5 text-sm text-mute">Placa {{ sale.plate ?? '—' }}</span>
+      <span v-if="sale.clients?.cpf" class="inline-flex items-center gap-0.5 text-sm text-mute">CPF {{ sale.clients.cpf }}<CopyBtn :text="sale.clients.cpf" label="Copiar CPF" /></span></div>
 
     <div v-if="canc" class="card mb-4 border-neg/50">
       <h2 class="font-bold">Cancelamento em {{ dateBR(canc.cancelled_at) }}</h2>
@@ -126,4 +137,9 @@ async function addReversal() {
     </ModalBox>
   </div>
   <p v-else class="text-mute">Venda não encontrada.</p>
+
+  <ModalBox :open="pdf.open" title="Proposta do cliente" wide @close="pdf.open = false">
+    <iframe :src="pdf.url" class="h-[70vh] w-full rounded-xl border border-line" title="Proposta em PDF" />
+    <div class="mt-3 flex justify-end gap-2"><a :href="pdf.url" target="_blank" rel="noopener" class="btn">Abrir em nova aba</a></div>
+  </ModalBox>
 </template>

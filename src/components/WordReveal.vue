@@ -32,7 +32,8 @@ function update() {
   if (!el || !words.length) return
   const r = el.getBoundingClientRect(), vh = window.innerHeight
   // span cresce com o tamanho do texto (altura do bloco + meia tela)
-  const prog = Math.min(1, Math.max(0, (vh * 0.85 - r.top) / (r.height + vh * 0.5)))
+  const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2   // fim da página: texto completo
+  const prog = atEnd ? 1 : Math.min(1, Math.max(0, (vh * 0.85 - r.top) / (r.height + vh * 0.35)))
   const n = words.length
   for (let i = 0; i < n; i++) {
     const local = Math.min(1, Math.max(0, prog * (n + 3) - i)) // ~3 palavras de sobreposição

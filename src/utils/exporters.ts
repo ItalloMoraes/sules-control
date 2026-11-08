@@ -19,10 +19,39 @@ export function toXLSX(t: Table, name: string) {
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, t.title.slice(0, 31))
   XLSX.writeFile(wb, name + '.xlsx')
 }
-export function toPDF(t: Table, name: string, subtitle = '') {
-  const doc = new jsPDF({ orientation: 'landscape' })
-  doc.setFontSize(14); doc.text(t.title, 14, 15)
-  if (subtitle) { doc.setFontSize(9); doc.text(subtitle, 14, 21) }
-  autoTable(doc, { head: [t.headers], body: t.rows.map(r => r.map(String)), startY: 25, styles: { fontSize: 8 } })
+async function imgData(url: string): Promise<string | null> {
+  try {
+    const blob = await (await fetch(url)).blob()
+    return await new Promise(res => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(blob) })
+  } catch { return null }
+}
+/** PDF no visual do site: cabeçalho com marca e mascote, tabela verde com linhas alternadas e rodapé numerado. */
+export async function toPDF(t: Table, name: string, subtitle = '') {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight()
+  const G: [number, number, number] = [30, 138, 68], INK: [number, number, number] = [29, 29, 31], MUTE: [number, number, number] = [110, 110, 115]
+  const mascot = await imgData('/mascote.png')
+  const header = () => {
+    doc.setFillColor(245, 247, 245); doc.rect(0, 0, W, 26, 'F'); doc.setFillColor(...G); doc.rect(0, 26, W, 1, 'F')
+    let x = 12
+    if (mascot) { const p = doc.getImageProperties(mascot), h = 18, w = (h * p.width) / p.height; doc.addImage(mascot, 'PNG', 12, 4, w, h); x += w + 4 }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...G); doc.text('Su', x, 15)
+    const sw = doc.getTextWidth('Su'); doc.setTextColor(...INK); doc.text('les Control', x + sw, 15)
+    doc.setFontSize(12); doc.text(t.title, W - 12, 12, { align: 'right' })
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...MUTE)
+    if (subtitle) doc.text(subtitle, W - 12, 19, { align: 'right' })
+  }
+  autoTable(doc, {
+    head: [t.headers], body: t.rows.map(r => r.map(String)), startY: 34, margin: { top: 34, left: 12, right: 12, bottom: 16 },
+    theme: 'plain', styles: { fontSize: 8.5, cellPadding: 2.6, textColor: INK },
+    headStyles: { fillColor: G, textColor: [255, 255, 255], fontStyle: 'bold' }, alternateRowStyles: { fillColor: [244, 248, 245] },
+    didDrawPage: header,
+  })
+  const n = doc.getNumberOfPages()
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i); doc.setFontSize(8); doc.setTextColor(...MUTE)
+    doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} · Sules Control`, 12, H - 8)
+    doc.text(`Página ${i} de ${n}`, W - 12, H - 8, { align: 'right' })
+  }
   doc.save(name + '.pdf')
 }
