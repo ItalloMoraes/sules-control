@@ -20,13 +20,11 @@ const collapsed = ref(localStorage.getItem('sc-nav') === '1')
 function toggleNav() { collapsed.value = !collapsed.value; localStorage.setItem('sc-nav', collapsed.value ? '1' : '0') }
 const nav = [
   { to: '/', label: 'Dashboard', icon: 'dashboard' }, { to: '/vendas', label: 'Vendas', icon: 'sales' },
-  { to: '/comissoes', label: 'Comissões', icon: 'commissions' }, { to: '/cancelamentos', label: 'Cancelamentos', icon: 'cancellations' },
-  { to: '/calendario', label: 'Calendário', icon: 'calendar' }, { to: '/clientes', label: 'Clientes', icon: 'clients' },
+  { to: '/cancelamentos', label: 'Cancelamentos', icon: 'cancellations' }, { to: '/calendario', label: 'Calendário', icon: 'calendar' },
   { to: '/notas', label: 'Notas e mensagens', icon: 'notes' }, { to: '/metas', label: 'Metas e conversão', icon: 'goals' },
-  { to: '/projecoes', label: 'Projeções e comparativos', icon: 'forecast' }, { to: '/relatorios', label: 'Relatórios', icon: 'reports' },
-  { to: '/conferencia', label: 'Conferência mensal', icon: 'reconcile' }, { to: '/configuracoes', label: 'Configurações', icon: 'settings' },
+  { to: '/projecoes', label: 'Projeções e comparativos', icon: 'forecast' }, { to: '/relatorios', label: 'Relatórios e conferência', icon: 'reports' },
 ]
-const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.startsWith(to))
+const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.startsWith(to) || (to === '/relatorios' && route.path.startsWith('/conferencia')))
 onMounted(() => run(() => data.refresh(), 'Dados carregados').catch(() => {}))
 async function out() { await auth.logout(); router.push('/login') }
 </script>
@@ -45,8 +43,14 @@ async function out() { await auth.logout(); router.push('/login') }
           <AppIcon :name="n.icon" class="shrink-0" /><span class="truncate" :class="collapsed ? 'md:hidden' : ''">{{ n.label }}</span>
         </router-link>
       </nav>
+      <div class="mt-auto border-t border-line/70 px-1 pt-2">
+        <router-link to="/configuracoes" title="Configurações" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors"
+          :class="[isActive('/configuracoes') ? 'bg-gold/10 font-semibold text-gold' : 'text-mute hover:bg-raise hover:text-text', collapsed ? 'md:justify-center md:px-0' : '']" @click="open = false">
+          <AppIcon name="settings" class="shrink-0" /><span :class="collapsed ? 'md:hidden' : ''">Configurações</span>
+        </router-link>
+      </div>
       <component :is="SUHAI_SITE ? 'a' : 'div'" :href="SUHAI_SITE || undefined" target="_blank" rel="noopener noreferrer" :title="SUHAI_SITE ? 'Site da Suhai' : undefined"
-        class="mt-auto block rounded-2xl bg-gold p-3 text-center text-white dark:text-[#04210f]" :class="collapsed ? 'md:p-1.5' : ''">
+        class="mt-2 block rounded-2xl bg-gold p-3 text-center text-white dark:text-[#04210f]" :class="collapsed ? 'md:p-1.5' : ''">
         <img src="/mascote.png" alt="Mascote Suhai" class="mx-auto object-contain" :class="collapsed ? 'h-28 md:h-14' : 'h-28'" />
         <div :class="collapsed ? 'md:hidden' : ''"><p class="text-sm font-semibold">Bora fechar mais uma</p><p class="text-xs opacity-80">Acompanhe sua meta do mês em Metas.</p></div>
       </component>

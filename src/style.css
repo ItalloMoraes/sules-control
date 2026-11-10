@@ -73,3 +73,7 @@ main .animate-on-scroll { --ry: 10px; --rb: 3px; animation-duration: .32s; anima
 *::-webkit-scrollbar-track { background: transparent; }
 /* barras de filtros: os campos nunca ficam espremidos */
 .filters { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+
+/* tabelas rolam na horizontal dentro do cartão, sem alargar a página */
+body { overflow-x: clip; }
+.tbl th, .tbl td { white-space: nowrap; }

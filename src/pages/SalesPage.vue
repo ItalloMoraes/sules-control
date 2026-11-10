@@ -111,10 +111,10 @@ async function save() {
     <USelect v-model="filters.origin" class="input" aria-label="Origem"><option value="">Todas as origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
     <USelect v-model="filters.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
     <USelect v-model="filters.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
-    <div class="flex gap-1"><UDate v-model="filters.from" class="input" aria-label="De" /><UDate v-model="filters.to" class="input" aria-label="Até" /></div>
+    <UDateRange v-model:from="filters.from" v-model:to="filters.to" class="input" aria-label="Período" />
   </div>
   <div class="card overflow-x-auto p-0">
-    <table class="tbl">
+    <div class="overflow-x-auto"><table class="tbl">
       <thead><tr><th>Data</th><th>Cliente</th><th>Produto</th><th>Origem</th><th class="text-right">Prêmio</th><th class="text-right">Bruta</th><th class="text-right">Líquida</th><th>Status</th><th></th></tr></thead>
       <tbody>
         <tr v-for="s in list" :key="s.id">
@@ -130,7 +130,7 @@ async function save() {
         </tr>
         <tr v-if="!list.length"><td colspan="9" class="py-6 text-center text-mute">Nenhuma venda com esses filtros.</td></tr>
       </tbody>
-    </table>
+    </table></div>
   </div>
 
   <ModalBox :open="modal" :title="isEdit ? 'Editar venda' : 'Nova venda'" @close="modal = false">

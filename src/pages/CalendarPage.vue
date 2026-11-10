@@ -61,8 +61,8 @@ const daySales = computed(() => byDay.value.get(selected.value) ?? [])
     </button>
   </div>
   <div class="card mt-4 overflow-x-auto"><h2 class="mb-2 font-bold">{{ dateBR(selected) }}</h2>
-    <table class="tbl"><thead><tr><th>Cliente</th><th>Produto</th><th class="text-right">Prêmio</th><th class="text-right">Comissão</th><th>Status</th></tr></thead>
+    <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Cliente</th><th>Produto</th><th class="text-right">Prêmio</th><th class="text-right">Comissão</th><th>Status</th></tr></thead>
       <tbody><tr v-for="s in daySales" :key="s.id" class="cursor-pointer" @click="router.push('/vendas/' + s.id)"><td>{{ s.clients?.full_name }}</td><td>{{ s.products?.name }}</td>
         <td class="num text-right">{{ brl(s.premium) }}</td><td class="num text-right">{{ brl(s.net_commission) }}</td><td><StatusBadge :value="s.status" /></td></tr>
-        <tr v-if="!daySales.length"><td colspan="5" class="py-4 text-center text-mute">Sem vendas neste dia.</td></tr></tbody></table></div>
+        <tr v-if="!daySales.length"><td colspan="5" class="py-4 text-center text-mute">Sem vendas neste dia.</td></tr></tbody></table></div></div>
 </template>

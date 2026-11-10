@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useData } from '@/stores/data'
 import { brl, dateBR, monthEnd, monthLabel, monthStart, todayISO } from '@/utils/format'
 import { supabase } from '@/services/supabase'
+import { META_CONVERSAO } from '@/config'
+import SegTabs from '@/components/SegTabs.vue'
 import { project } from '@/utils/projections'
 import { monthKeys, monthPeriod, round2, summarize, type Period } from '@/utils/finance'
 import PageHeader from '@/components/PageHeader.vue'
@@ -28,7 +30,8 @@ const sum = computed(() => summarize(data.dataset, period.value, filt.value))
 const preview = computed(() => data.sales.filter(s => filt.value(s) && s.sale_date >= f.from && s.sale_date <= f.to)
   .sort((a, b) => b.created_at.localeCompare(a.created_at)))
 
-const keys = computed(() => monthKeys(new Date(Date.UTC(+f.to.slice(0, 4), +f.to.slice(5, 7) - 12, 1)).toISOString().slice(0, 7), 12))
+const chartSpan = ref('6')   // meses mostrados nos gráficos de evolução
+const keys = computed(() => monthKeys(new Date(Date.UTC(+f.to.slice(0, 4), +f.to.slice(5, 7) - +chartSpan.value, 1)).toISOString().slice(0, 7), +chartSpan.value))
 const series = computed(() => keys.value.map(k => summarize(data.dataset, monthPeriod(k), filt.value)))
 const labels = computed(() => keys.value.map(k => monthLabel(k + '-01')))
 
@@ -41,6 +44,9 @@ onMounted(async () => {
   lead.value = (l?.[0] as Lead | undefined) ?? null
 })
 const leadPct = computed(() => lead.value && lead.value.leads_received ? Math.min(100, Math.round((lead.value.sales_converted / lead.value.leads_received) * 1000) / 10) : 0)
+const leadFill = computed(() => Math.min(100, (leadPct.value / META_CONVERSAO) * 100))
+const projRows = computed(() => [['Conservador', proj.value.scenarios.conservador], ['Provável', proj.value.scenarios.provavel], ['Otimista', proj.value.scenarios.otimista]] as const)
+const projMax = computed(() => Math.max(...projRows.value.map(r => r[1].net), 1))
 const C = { gold: '#1E8A44', pos: '#34C759', neg: '#FF453A', info: '#8FD6B0', warn: '#FF9F0A' }
 const line = (title: string, vals: number[], color: string): ChartConfiguration => ({ type: 'line', data: { labels: labels.value, datasets: [{ label: title, data: vals, borderColor: color, backgroundColor: color + '33', tension: .3, fill: true }] } })
 const charts = computed(() => ({
@@ -50,12 +56,11 @@ const charts = computed(() => ({
     { label: 'Líquida', data: series.value.map(s => s.net), backgroundColor: C.gold }] } } as ChartConfiguration,
   premium: line('Prêmios', series.value.map(s => s.premium), C.pos),
   cancel: { type: 'bar', data: { labels: labels.value, datasets: [
-    { label: 'Comissão perdida', data: series.value.map(s => s.lostCommission), backgroundColor: C.warn },
-    { label: 'Estornos efetivados', data: series.value.map(s => s.reversalsEffective), backgroundColor: C.neg }] } } as ChartConfiguration,
+    { label: 'Comissão perdida', data: series.value.map(s => s.lostCommission), backgroundColor: C.warn }] } } as ChartConfiguration,
   origin: { type: 'doughnut', data: { labels: ['Digital Suhai', 'Venda própria'], datasets: [{ backgroundColor: [C.info, C.gold], data: ['digital_suhai', 'venda_propria'].map(o =>
-    round2(data.sales.filter(s => s.origin === o && s.status === 'emitida' && s.sale_date >= f.from && s.sale_date <= f.to).reduce((a, s) => a + s.net_commission, 0))) }] } } as ChartConfiguration,
+    round2(data.sales.filter(s => s.origin === o && s.status !== 'cancelada' && s.sale_date >= f.from && s.sale_date <= f.to).reduce((a, s) => a + s.net_commission, 0))) }] } } as ChartConfiguration,
   product: { type: 'doughnut', data: { labels: data.products.map(p => p.name), datasets: [{ backgroundColor: [C.gold, C.info, C.pos, C.warn, C.neg], data: data.products.map(p =>
-    data.sales.filter(s => s.product_id === p.id && s.status === 'emitida' && s.sale_date >= f.from && s.sale_date <= f.to).length) }] } } as ChartConfiguration,
+    data.sales.filter(s => s.product_id === p.id && s.status !== 'cancelada' && s.sale_date >= f.from && s.sale_date <= f.to).length) }] } } as ChartConfiguration,
 }))
 </script>
 <template>
@@ -65,48 +70,52 @@ const charts = computed(() => ({
     <router-link to="/relatorios" class="btn">Ir para o backup</router-link>
   </div>
   <div class="card mb-4 filters">
-    <UDate v-model="f.from" class="input" aria-label="De" /><UDate v-model="f.to" class="input" aria-label="Até" />
+    <UDateRange v-model:from="f.from" v-model:to="f.to" class="input" aria-label="Período" />
     <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
     <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
     <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
-    <USelect v-model="f.status" class="input" aria-label="Status"><option value="">Status</option><option value="pendente">Pendente</option><option value="emitida">Emitida</option><option value="cancelada">Cancelada</option></USelect>
   </div>
-  <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-    <StatCard label="Comissão líquida gerada" :value="brl(sum.net)" tone="gold" :hint="`${sum.issuedCount} vendas ativas · já sem as canceladas`" />
+  <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <StatCard label="Comissão líquida" :value="brl(sum.net)" tone="gold" :hint="`${sum.issuedCount} vendas ativas · já sem as canceladas`" />
     <StatCard label="Comissão bruta" :value="brl(sum.gross)" hint="Prêmio × % da seguradora" />
     <StatCard label="Prêmios totais" :value="brl(sum.premium)" />
     <StatCard label="Perdida por cancelamentos" :value="brl(sum.lostCommission)" tone="warn" />
-    <div v-reveal.stagger class="card flex items-center gap-3">
-      <svg width="56" height="56" viewBox="0 0 36 36" class="-rotate-90 shrink-0" aria-hidden="true">
+  </div>
+  <div class="mb-6 grid gap-4 lg:grid-cols-2">
+    <div v-reveal class="card flex items-center gap-4">
+      <svg width="76" height="76" viewBox="0 0 36 36" class="-rotate-90 shrink-0" aria-hidden="true">
         <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" class="text-raise" stroke-width="3.4" />
-        <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" class="text-gold" stroke-width="3.4" stroke-linecap="round" pathLength="100" :stroke-dasharray="`${leadPct} 100`" />
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" class="text-gold" stroke-width="3.4" stroke-linecap="round" pathLength="100" :stroke-dasharray="`${leadFill} 100`" />
       </svg>
       <div v-if="lead"><div class="text-xs text-mute">Conversão de leads · {{ monthLabel(lead.reference_month) }}</div>
-        <div class="num font-display text-2xl font-semibold">{{ leadPct }}%</div><div class="text-xs text-mute">{{ lead.sales_converted }} vendas de {{ lead.leads_received }} leads</div></div>
-      <div v-else><div class="text-xs text-mute">Conversão de leads</div><router-link to="/metas" class="text-sm text-gold hover:underline">Registrar números</router-link></div>
+        <div class="num font-display text-3xl font-semibold">{{ leadPct }}%<span class="ml-2 text-sm font-normal text-mute">meta {{ META_CONVERSAO }}%</span></div>
+        <div class="text-xs text-mute">{{ lead.sales_converted }} vendas de {{ lead.leads_received }} leads</div></div>
+      <div v-else><div class="text-xs text-mute">Conversão de leads · meta {{ META_CONVERSAO }}%</div><router-link to="/metas" class="text-sm text-gold hover:underline">Registrar números</router-link></div>
+    </div>
+    <div v-reveal class="card">
+      <div class="mb-2 flex items-center justify-between"><h2 class="text-sm font-semibold">Projeção do mês</h2><router-link to="/projecoes" class="text-xs text-gold hover:underline">{{ proj.remainingBizDays }} dias úteis · ver mais</router-link></div>
+      <div v-for="[nm, sc] in projRows" :key="nm" class="mb-2 last:mb-0">
+        <div class="flex justify-between text-xs"><span class="text-mute">{{ nm }}</span><span class="num font-semibold">{{ brl(sc.net) }}</span></div>
+        <div class="mt-1 h-2 rounded-full bg-raise"><div class="h-2 rounded-full bg-gold transition-[width] duration-500" :class="nm === 'Provável' ? '' : nm === 'Otimista' ? 'opacity-70' : 'opacity-40'" :style="{ width: Math.max(4, (sc.net / projMax) * 100) + '%' }" /></div>
+      </div>
     </div>
   </div>
-  <div v-reveal class="card mb-6 flex flex-wrap items-center justify-between gap-4">
-    <div><div class="text-xs text-mute">Projeção do mês (cenário provável)</div>
-      <div class="num font-display text-2xl font-semibold text-gold">{{ brl(proj.scenarios.provavel.net) }}</div>
-      <div class="text-xs text-mute">Entre {{ brl(proj.scenarios.conservador.net) }} e {{ brl(proj.scenarios.otimista.net) }} · {{ proj.remainingBizDays }} dias úteis restantes</div></div>
-    <router-link to="/projecoes" class="btn">Ver projeções</router-link>
-  </div>
+  <SegTabs v-model="chartSpan" :tabs="[{ id: '3', label: '3 meses' }, { id: '6', label: '6 meses' }, { id: '12', label: '12 meses' }]" />
   <div class="mb-6 grid gap-4 lg:grid-cols-2">
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Evolução das vendas</h2><BaseChart :config="charts.sales" /></div>
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Evolução das comissões</h2><BaseChart :config="charts.commissions" /></div>
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Prêmios por mês</h2><BaseChart :config="charts.premium" /></div>
-    <div v-reveal class="card"><h2 class="mb-2 font-bold">Cancelamentos e estornos</h2><BaseChart :config="charts.cancel" :height="160" /></div>
+    <div v-reveal class="card"><h2 class="mb-2 font-bold">Cancelamentos</h2><BaseChart :config="charts.cancel" :height="160" /></div>
   </div>
   <div class="mb-6 grid gap-4 md:grid-cols-2">
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Digital Suhai × Venda própria</h2><BaseChart :config="charts.origin" :height="230" /></div>
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Por produto</h2><BaseChart :config="charts.product" :height="230" /></div>
   </div>
   <div v-reveal class="card overflow-x-auto p-0"><h2 class="p-4 pb-0 font-bold">Cadastros do período (mais recentes primeiro)</h2>
-    <table class="tbl"><thead><tr><th>Cadastrada em</th><th>Data da venda</th><th>Cliente</th><th>Produto</th><th class="text-right">Prêmio</th><th class="text-right">Líquida</th><th>Status</th></tr></thead>
+    <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Cadastrada em</th><th>Data da venda</th><th>Cliente</th><th>Produto</th><th class="text-right">Prêmio</th><th class="text-right">Líquida</th><th>Status</th></tr></thead>
       <tbody><tr v-for="s in preview" :key="s.id" class="cursor-pointer" @click="router.push('/vendas/' + s.id)">
         <td>{{ new Date(s.created_at).toLocaleString('pt-BR', { timeZone: 'America/Recife' }) }}</td><td>{{ dateBR(s.sale_date) }}</td>
         <td>{{ s.clients?.full_name }}</td><td>{{ s.products?.name }}</td><td class="num text-right">{{ brl(s.premium) }}</td>
         <td class="num text-right">{{ brl(s.net_commission) }}</td><td><StatusBadge :value="s.status" /></td></tr>
-        <tr v-if="!preview.length"><td colspan="7" class="py-6 text-center text-mute">Nenhuma venda neste período.</td></tr></tbody></table></div>
+        <tr v-if="!preview.length"><td colspan="7" class="py-6 text-center text-mute">Nenhuma venda neste período.</td></tr></tbody></table></div></div>
 </template>

@@ -74,13 +74,13 @@ const sub = computed(() => `Período ${dateBR(f.from)} a ${dateBR(f.to)}`)
   <p class="mb-3 text-xs text-mute">Último backup: {{ lastBackup ? dateBR(lastBackup) : 'ainda não feito' }}. O plano gratuito não tem backup automático; baixe uma cópia a cada poucos dias.</p>
   <div class="card mb-4 grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
     <USelect v-model="f.type" class="input sm:col-span-2" aria-label="Relatório"><option value="comercial">Comercial</option><option value="financeiro">Financeiro</option><option value="detalhado">Detalhado (valores e percentuais)</option><option value="cancelamentos">Cancelamentos</option><option value="conferencia">Conferência mensal</option></USelect>
-    <UDate v-model="f.from" class="input" aria-label="De" /><UDate v-model="f.to" class="input" aria-label="Até" />
+    <UDateRange v-model:from="f.from" v-model:to="f.to" class="input" aria-label="Período" />
     <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
     <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
     <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
     <USelect v-if="f.type === 'comercial'" v-model="f.groupBy" class="input" aria-label="Agrupar"><option value="status">Por status</option><option value="seguradora">Por seguradora</option><option value="produto">Por produto</option><option value="origem">Por origem</option></USelect>
   </div>
-  <div class="card overflow-x-auto p-0"><table class="tbl"><thead><tr><th v-for="h in table.headers" :key="h">{{ h }}</th></tr></thead>
+  <div class="card overflow-x-auto p-0"><div class="overflow-x-auto"><table class="tbl"><thead><tr><th v-for="h in table.headers" :key="h">{{ h }}</th></tr></thead>
     <tbody><tr v-for="(r, i) in table.rows" :key="i"><td v-for="(c, j) in r" :key="j" class="num">{{ c }}</td></tr>
-      <tr v-if="!table.rows.length"><td :colspan="table.headers.length" class="py-6 text-center text-mute">Sem dados para o filtro.</td></tr></tbody></table></div>
+      <tr v-if="!table.rows.length"><td :colspan="table.headers.length" class="py-6 text-center text-mute">Sem dados para o filtro.</td></tr></tbody></table></div></div>
 </template>

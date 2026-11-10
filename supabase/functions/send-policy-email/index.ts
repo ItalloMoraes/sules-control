@@ -22,7 +22,7 @@ Deno.serve(async req => {
     const rows: [string, string][] = [
       ['Cliente', s.clients?.full_name ?? '—'], ['CPF', s.clients?.cpf ?? '—'], ['Telefone', s.clients?.phone ?? '—'],
       ['Seguradora', s.insurers?.name ?? '—'], ['Produto', s.products?.name ?? '—'],
-      ['Veículo', [s.vehicle_description, s.plate].filter(Boolean).join(' · ') || '—'],
+      ['Placa', s.plate ?? '—'],
       ['Proposta', s.proposal_number ?? '—'], ['Apólice', s.policy_number ?? 'ainda não emitida'],
       ['Data da venda', String(s.sale_date).split('-').reverse().join('/')],
       ['Prêmio', brl(s.premium)], ['Percentual da seguradora', pct(s.insurer_percent)],

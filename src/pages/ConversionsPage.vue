@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { ChartConfiguration } from 'chart.js'
 import { supabase, fail } from '@/services/supabase'
 import { useAuth } from '@/stores/auth'
@@ -18,7 +18,14 @@ const f = ref({ month: new Date().toISOString().slice(0, 7), leads: 0, sales: 0 
 async function load() {
   const { data, error } = await supabase.from('conversions').select('*').order('reference_month')
   fail(error); rows.value = (data ?? []) as Row[]
+  prefill()
 }
+// o mês escolhido já vem com os números salvos; é só ajustar e salvar de novo (substitui o anterior)
+function prefill() {
+  const r = rows.value.find(x => x.reference_month.startsWith(f.value.month))
+  f.value.leads = r?.leads_received ?? 0; f.value.sales = r?.sales_converted ?? 0
+}
+watch(() => f.value.month, prefill)
 async function upsert(list: In[]) {
   fail((await supabase.from('conversions').upsert(list.map(r => ({ ...r, user_id: auth.session!.user.id })), { onConflict: 'user_id,reference_month' })).error)
   await load()
@@ -62,8 +69,8 @@ onMounted(() => load().catch(e => run(() => Promise.reject(e), '')))
     </div>
   </div>
   <div v-reveal class="card overflow-x-auto p-0">
-    <table class="tbl"><thead><tr><th>Mês</th><th>Leads recebidos</th><th>Vendas convertidas</th><th></th></tr></thead>
+    <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mês</th><th>Leads recebidos</th><th>Vendas convertidas</th><th></th></tr></thead>
       <tbody><tr v-for="r in [...rows].reverse()" :key="r.id"><td>{{ monthLabel(r.reference_month) }}</td><td class="num">{{ r.leads_received }}</td><td class="num">{{ r.sales_converted }}</td>
-        <td class="text-right"><button class="btn btn-danger" @click="remove(r.id)">Remover</button></td></tr></tbody></table>
+        <td class="text-right"><button class="btn btn-danger" @click="remove(r.id)">Remover</button></td></tr></tbody></table></div>
   </div>
 </template>

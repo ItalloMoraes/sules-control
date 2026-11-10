@@ -148,10 +148,10 @@ const pendingAttention = computed(() => rows.value.filter(r => ['divergencia', '
       <USelect v-model="filters.cls" class="input" aria-label="Filtro rápido"><option value="">Todos</option><option value="atencao">Precisam de atenção</option><option value="conferido">Conferidos</option>
         <option value="divergencia">Divergências</option><option value="nao_cadastrado">Não cadastrados</option><option value="nao_consta_no_relatorio">Não constam no relatório</option>
         <option value="movimentacao_especial">Movimentações especiais</option><option value="endosso">Endossos</option><option value="cancelamento">Cancelamentos</option><option value="duplicado">Duplicados</option></USelect>
-      <div class="flex gap-1"><UDate v-model="filters.from" class="input" aria-label="Vigência de" /><UDate v-model="filters.to" class="input" aria-label="Vigência até" /></div>
+      <UDateRange v-model:from="filters.from" v-model:to="filters.to" class="input" aria-label="Período" />
       <button class="btn" @click="filters.dir = filters.dir === 'asc' ? 'desc' : 'asc'">Vigência {{ filters.dir === 'asc' ? '↑' : '↓' }}</button>
     </div>
-    <div class="card overflow-x-auto p-0"><table class="tbl">
+    <div class="card overflow-x-auto p-0"><div class="overflow-x-auto"><table class="tbl">
       <thead><tr><th>Dt. In. Vig.</th><th>Cliente</th><th>Proposta</th><th>Apólice</th><th>Endosso</th><th>Neg</th><th class="text-right">Prêmio</th><th class="text-right">Comissão</th><th>Situação</th></tr></thead>
       <tbody><tr v-for="r in view" :key="r.id" class="cursor-pointer" @click="open(r)">
         <template v-if="r.production_report_items"><td>{{ dateBR(r.production_report_items.policy_start_date) }}</td><td>{{ r.production_report_items.client_name }}</td>
@@ -160,7 +160,7 @@ const pendingAttention = computed(() => rows.value.filter(r => ['divergencia', '
           <td class="num text-right" :class="{ 'text-neg': r.production_report_items.premium < 0 }">{{ brl(r.production_report_items.premium) }}</td>
           <td class="num text-right" :class="{ 'text-neg': r.production_report_items.commission < 0 }">{{ brl(r.production_report_items.commission) }}</td></template>
         <template v-else><td>—</td><td>{{ saleOf(r.sale_id)?.clients?.full_name }}</td><td>{{ saleOf(r.sale_id)?.proposal_number ?? '—' }}</td><td colspan="5" class="text-mute">Venda cadastrada sem registro no relatório</td></template>
-        <td><StatusBadge :value="r.classification" /><span v-if="r.analyzed" class="ml-1 text-xs text-pos">✓ analisado</span></td></tr></tbody></table></div>
+        <td><StatusBadge :value="r.classification" /><span v-if="r.analyzed" class="ml-1 text-xs text-pos">✓ analisado</span></td></tr></tbody></table></div></div>
 
     <ModalBox :open="!!sel" title="Registro lado a lado" @close="sel = null">
       <div v-if="sel" class="grid gap-3 md:grid-cols-2">

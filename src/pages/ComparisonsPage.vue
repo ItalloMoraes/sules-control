@@ -40,6 +40,6 @@ const metrics: [string, (s: Summary) => string][] = [
       <option value="12">Últimos 12 meses</option><option value="mesmo_mes">Mesmo mês em anos diferentes</option>
       <option value="origem">Digital Suhai × Venda própria (12m)</option><option value="seguradora">Seguradora × seguradora (12m)</option><option value="produto">Moto × Auto (12m)</option></USelect>
   </PageHeader>
-  <div class="card overflow-x-auto p-0"><table class="tbl"><thead><tr><th>Métrica</th><th v-for="c in cols" :key="c.label" class="text-right">{{ c.label }}</th></tr></thead>
-    <tbody><tr v-for="[name, fn] in metrics" :key="name"><td>{{ name }}</td><td v-for="c in cols" :key="c.label" class="num text-right">{{ fn(c.s) }}</td></tr></tbody></table></div>
+  <div class="card overflow-x-auto p-0"><div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Métrica</th><th v-for="c in cols" :key="c.label" class="text-right">{{ c.label }}</th></tr></thead>
+    <tbody><tr v-for="[name, fn] in metrics" :key="name"><td>{{ name }}</td><td v-for="c in cols" :key="c.label" class="num text-right">{{ fn(c.s) }}</td></tr></tbody></table></div></div>
 </template>

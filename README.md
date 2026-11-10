@@ -6,10 +6,10 @@ Sistema web para corretores de seguro auto: vendas, emissão de apólices, comis
 
 - **Vendas e apólices:** cadastro da venda com cliente criado na hora, depois emissão da apólice (a venda passa de *pendente* a *emitida*).
 - **Comissões:** bruta e líquida calculadas no banco, com o percentual do corretor congelado em cada venda; recebimentos e saldo de caixa.
-- **Cancelamentos e estornos:** sem exclusão destrutiva; só estorno efetivado entra no resultado.
+- **Cancelamentos:** a comissão da venda cancelada sai do total. Excluir uma venda a apaga de vez.
 - **Conferência mensal:** importação do PDF da seguradora, comparação com as vendas cadastradas e validação pelo "Total período" do próprio relatório.
 - **Dashboard, metas, projeções, comparativos e relatórios** (PDF e Excel).
-- **Clientes:** busca por nome com o histórico completo de vendas, recebimentos e cancelamentos.
+- **Clientes:** cadastrados direto na venda e editáveis na tela da venda.
 - **Propostas em PDF:** anexo na venda, pré-visualização no site e envio junto com o e-mail ao RH.
 - **Notificações** de apólices pendentes (a cada 5 horas), **notas e mensagens prontas**, **registro de conversão de leads** e **assistente de chat**.
 - **E-mail automático** com os dados da venda para um destinatário configurável.
@@ -45,7 +45,7 @@ supabase/
    npm install
    ```
 2. No Supabase, crie um projeto. Em *Authentication*, desative o cadastro público de novos usuários e crie o seu usuário manualmente.
-3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql` e `005_proposals.sql`.
+3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql`, `005_proposals.sql` e `006_delete_sales.sql`.
 4. Crie o arquivo de ambiente e preencha:
    ```bash
    cp .env.example .env
@@ -70,7 +70,7 @@ supabase/
 | Variável | Descrição |
 |---|---|
 | `ANTHROPIC_API_KEY` | Chave da API usada pelo chat. `ANTHROPIC_MODEL` é opcional |
-| `SMTP_USER` / `SMTP_PASS` | Login da caixa de e-mail que envia as vendas |
+| `SMTP_USER` / `SMTP_PASS` | Login da caixa de e-mail que envia as vendas (de preferência uma senha de aplicativo) |
 | `SMTP_HOST` / `SMTP_PORT` | Opcionais. Padrão: `smtp.titan.email` e `465` (SSL) |
 | `RH_EMAIL` | Destinatário dos e-mails de venda |
 
@@ -120,7 +120,7 @@ Ative os backups do banco no Supabase (ou agende `pg_dump`).
 | Percentual do corretor congelado na venda | `sales.broker_percent` + trigger `sales_before_write` |
 | Comissões bruta e líquida | trigger no banco + `utils/finance.ts` |
 | Alteração financeira exige justificativa e gera histórico | `sales_before_write` → `audit_logs` |
-| Sem exclusão destrutiva | triggers `*_prevent_delete`, `block_delete`, arquivamento de clientes |
+| Excluir venda é definitivo e leva junto os registros ligados a ela | `006_delete_sales.sql` |
 | Sem estorno de dinheiro não recebido | `reversals_check` |
 | Cancelamento antes do recebimento = comissão perdida | `cancellations_before_insert` |
 | Só estorno efetivado impacta o resultado | `utils/finance.ts#summarize` |
