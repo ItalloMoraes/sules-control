@@ -17,10 +17,10 @@ const alpha = (hex: string, a: number) => {
   return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`
 }
 
-function pctLabels(chart: Chart) {
+const pctLabels = (fontColor: string) => (chart: Chart) => {
   const ds = chart.data.datasets[0], vals = (ds.data as number[]).map(Number), colors = ds.backgroundColor as string[]
   const total = vals.reduce((a, b) => a + b, 0) || 1
-  return (chart.data.labels ?? []).map((l, i) => ({ text: `${l}  ${Math.round((vals[i] / total) * 100)}%`, fillStyle: colors[i], strokeStyle: colors[i], lineWidth: 0, hidden: !chart.getDataVisibility(i), index: i, pointStyle: 'circle' as const }))
+  return (chart.data.labels ?? []).map((l, i) => ({ text: `${l}  ${Math.round((vals[i] / total) * 100)}%`, fillStyle: colors[i], strokeStyle: colors[i], lineWidth: 0, hidden: !chart.getDataVisibility(i), index: i, pointStyle: 'circle' as const, fontColor }))
 }
 
 // Visual limpo: barras arredondadas, linhas suaves com degradê, rosca fina, grade discreta.
@@ -34,7 +34,7 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
   for (const ds of copy.data.datasets as unknown as Record<string, unknown>[]) {
     const hex = typeof ds.backgroundColor === 'string' && /^#/.test(ds.backgroundColor) ? ds.backgroundColor : ''
     if (copy.type === 'bar') {
-      Object.assign(ds, { borderRadius: 8, borderSkipped: false, maxBarThickness: 26, categoryPercentage: 0.7, barPercentage: 0.85 })
+      Object.assign(ds, { borderRadius: 8, borderSkipped: false, maxBarThickness: (ds.maxBarThickness as number | undefined) ?? 26, categoryPercentage: (ds.categoryPercentage as number | undefined) ?? 0.7, barPercentage: (ds.barPercentage as number | undefined) ?? 0.85 })
       if (hex) ds.backgroundColor = (c: ScriptableContext<'bar'>) => {   // degradê; o período mais recente fica em destaque
         const a = c.chart.chartArea
         if (!a) return hex
@@ -64,7 +64,7 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
     layout: { padding: round ? 6 : 0 },
     plugins: {
       legend: { position: round ? 'bottom' : 'top', align: round ? 'center' : 'end',
-        labels: { color: mute, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16, font: { family: FONT, size: 12 }, ...(round ? { generateLabels: pctLabels } : {}) } },
+        labels: { color: mute, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16, font: { family: FONT, size: 12 }, ...(round ? { generateLabels: pctLabels(mute) } : {}) } },
       tooltip: { backgroundColor: panel, titleColor: text, bodyColor: mute, borderColor: border, borderWidth: 1, cornerRadius: 12, padding: 12, boxPadding: 6,
         usePointStyle: true, titleFont: { family: FONT, weight: 600 }, bodyFont: { family: FONT } },
     },

@@ -12,7 +12,7 @@ const router = createRouter({
         { path: 'clientes', redirect: '/vendas' },
                 { path: 'vendas', component: () => import('@/pages/SalesPage.vue'), meta: { title: 'Vendas' } },
         { path: 'vendas/:id', component: () => import('@/pages/SaleDetailPage.vue'), meta: { title: 'Venda' } },
-        { path: 'comissoes', redirect: '/vendas' },
+        { path: 'comissoes', component: () => import('@/pages/CommissionsPage.vue'), meta: { title: 'Comissões' } },
                 { path: 'cancelamentos', component: () => import('@/pages/CancellationsPage.vue'), meta: { title: 'Cancelamentos' } },
         { path: 'conferencia', redirect: { path: '/relatorios', query: { tab: 'conferencia' } } },
                 { path: 'conferencia/:id', component: () => import('@/pages/ReconciliationPage.vue'), meta: { title: 'Conferência' } },

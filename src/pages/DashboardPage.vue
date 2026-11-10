@@ -51,9 +51,10 @@ const C = { gold: '#1E8A44', pos: '#34C759', neg: '#FF453A', info: '#8FD6B0', wa
 const line = (title: string, vals: number[], color: string): ChartConfiguration => ({ type: 'line', data: { labels: labels.value, datasets: [{ label: title, data: vals, borderColor: color, backgroundColor: color + '33', tension: .3, fill: true }] } })
 const charts = computed(() => ({
   sales: line('Vendas', series.value.map(s => s.issuedCount), C.info),
+  // bruta larga e clara ao fundo; líquida mais estreita, forte e na frente
   commissions: { type: 'bar', data: { labels: labels.value, datasets: [
-    { label: 'Bruta', data: series.value.map(s => s.gross), backgroundColor: C.info },
-    { label: 'Líquida', data: series.value.map(s => s.net), backgroundColor: C.gold }] } } as ChartConfiguration,
+    { label: 'Bruta', data: series.value.map(s => s.gross), backgroundColor: C.info, grouped: false, order: 2, barPercentage: 1, maxBarThickness: 46 },
+    { label: 'Líquida', data: series.value.map(s => s.net), backgroundColor: C.pos, grouped: false, order: 1, barPercentage: 0.5, maxBarThickness: 22 }] } } as ChartConfiguration,
   premium: line('Prêmios', series.value.map(s => s.premium), C.pos),
   cancel: { type: 'bar', data: { labels: labels.value, datasets: [
     { label: 'Comissão perdida', data: series.value.map(s => s.lostCommission), backgroundColor: C.warn }] } } as ChartConfiguration,
@@ -75,13 +76,15 @@ const charts = computed(() => ({
     <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
     <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
   </div>
-  <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="mb-6 grid gap-4 lg:grid-cols-3">
     <StatCard label="Comissão líquida" :value="brl(sum.net)" tone="gold" :hint="`${sum.issuedCount} vendas ativas · já sem as canceladas`" />
-    <StatCard label="Comissão bruta" :value="brl(sum.gross)" hint="Prêmio × % da seguradora" />
-    <StatCard label="Prêmios totais" :value="brl(sum.premium)" />
-    <StatCard label="Perdida por cancelamentos" :value="brl(sum.lostCommission)" tone="warn" />
-  </div>
-  <div class="mb-6 grid gap-4 lg:grid-cols-2">
+    <div v-reveal class="card">
+      <div class="mb-2 flex items-center justify-between"><h2 class="text-sm font-semibold">Projeção do mês</h2><router-link to="/projecoes" class="text-xs text-gold hover:underline">{{ proj.remainingBizDays }} dias úteis · ver mais</router-link></div>
+      <div v-for="[nm, sc] in projRows" :key="nm" class="mb-2 last:mb-0">
+        <div class="flex justify-between text-xs"><span class="text-mute">{{ nm }}</span><span class="num font-semibold">{{ brl(sc.net) }}</span></div>
+        <div class="mt-1 h-2 rounded-full bg-raise"><div class="h-2 rounded-full bg-gold transition-[width] duration-500" :class="nm === 'Provável' ? '' : nm === 'Otimista' ? 'opacity-70' : 'opacity-40'" :style="{ width: Math.max(4, (sc.net / projMax) * 100) + '%' }" /></div>
+      </div>
+    </div>
     <div v-reveal class="card flex items-center gap-4">
       <svg width="76" height="76" viewBox="0 0 36 36" class="-rotate-90 shrink-0" aria-hidden="true">
         <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" class="text-raise" stroke-width="3.4" />
@@ -91,13 +94,6 @@ const charts = computed(() => ({
         <div class="num font-display text-3xl font-semibold">{{ leadPct }}%<span class="ml-2 text-sm font-normal text-mute">meta {{ META_CONVERSAO }}%</span></div>
         <div class="text-xs text-mute">{{ lead.sales_converted }} vendas de {{ lead.leads_received }} leads</div></div>
       <div v-else><div class="text-xs text-mute">Conversão de leads · meta {{ META_CONVERSAO }}%</div><router-link to="/metas" class="text-sm text-gold hover:underline">Registrar números</router-link></div>
-    </div>
-    <div v-reveal class="card">
-      <div class="mb-2 flex items-center justify-between"><h2 class="text-sm font-semibold">Projeção do mês</h2><router-link to="/projecoes" class="text-xs text-gold hover:underline">{{ proj.remainingBizDays }} dias úteis · ver mais</router-link></div>
-      <div v-for="[nm, sc] in projRows" :key="nm" class="mb-2 last:mb-0">
-        <div class="flex justify-between text-xs"><span class="text-mute">{{ nm }}</span><span class="num font-semibold">{{ brl(sc.net) }}</span></div>
-        <div class="mt-1 h-2 rounded-full bg-raise"><div class="h-2 rounded-full bg-gold transition-[width] duration-500" :class="nm === 'Provável' ? '' : nm === 'Otimista' ? 'opacity-70' : 'opacity-40'" :style="{ width: Math.max(4, (sc.net / projMax) * 100) + '%' }" /></div>
-      </div>
     </div>
   </div>
   <SegTabs v-model="chartSpan" :tabs="[{ id: '3', label: '3 meses' }, { id: '6', label: '6 meses' }, { id: '12', label: '12 meses' }]" />
