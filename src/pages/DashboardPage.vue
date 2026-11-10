@@ -70,12 +70,7 @@ const charts = computed(() => ({
     <span>{{ backupDays === null ? 'Você ainda não baixou um backup.' : `Faz ${backupDays} dias do último backup.` }} Baixe uma cópia dos seus dados.</span>
     <router-link to="/relatorios" class="btn">Ir para o backup</router-link>
   </div>
-  <div class="card mb-4 filters">
-    <UDateRange v-model:from="f.from" v-model:to="f.to" class="input" aria-label="Período" />
-    <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
-    <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
-    <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
-  </div>
+  <div class="mb-4 flex justify-end"><UDateRange v-model:from="f.from" v-model:to="f.to" class="input w-72 max-w-full" aria-label="Período" /></div>
   <div class="mb-6 grid gap-4 lg:grid-cols-3">
     <StatCard label="Comissão líquida" :value="brl(sum.net)" tone="gold" :hint="`${sum.issuedCount} vendas ativas · já sem as canceladas`" />
     <div v-reveal class="card">

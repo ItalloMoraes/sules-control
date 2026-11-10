@@ -39,7 +39,7 @@ export interface Reversal {
   reversal_date: string | null; status: ReversalStatus; justification: string
 }
 export interface Settings {
-  broker_name: string | null; broker_percent: number; default_insurer_id: string | null
+  broker_name: string | null; broker_email: string | null; broker_percent: number; default_insurer_id: string | null
   suggested_insurer_percent: number | null; theme: 'dark' | 'light'
   goal_net_basis: 'generated' | 'after_reversals'
 }

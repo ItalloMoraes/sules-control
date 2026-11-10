@@ -7,17 +7,17 @@ import { run } from '@/composables/useToast'
 import PageHeader from '@/components/PageHeader.vue'
 
 const data = useData(); const { theme, toggle } = useTheme()
-const f = reactive({ broker_name: '', broker_percent: 70, suggested_insurer_percent: 20, default_insurer_id: '' as string | null, goal_net_basis: 'generated' })
+const f = reactive({ broker_name: '', broker_email: '', broker_percent: 70, suggested_insurer_percent: 20, default_insurer_id: '' as string | null, goal_net_basis: 'generated' })
 watchEffect(() => {
   const s = data.settings
-  if (s) Object.assign(f, { broker_name: s.broker_name ?? '', broker_percent: s.broker_percent, suggested_insurer_percent: s.suggested_insurer_percent ?? 20, default_insurer_id: s.default_insurer_id, goal_net_basis: s.goal_net_basis })
+  if (s) Object.assign(f, { broker_name: s.broker_name ?? '', broker_email: s.broker_email ?? '', broker_percent: s.broker_percent, suggested_insurer_percent: s.suggested_insurer_percent ?? 20, default_insurer_id: s.default_insurer_id, goal_net_basis: s.goal_net_basis })
 })
 const newInsurer = ref(''), newProduct = ref(''), newHoliday = ref('')
 
 async function save() {
   await run(async () => {
     const { error } = await supabase.from('settings').update({
-      broker_name: f.broker_name, broker_percent: f.broker_percent, suggested_insurer_percent: f.suggested_insurer_percent,
+      broker_name: f.broker_name, broker_email: f.broker_email.trim() || null, broker_percent: f.broker_percent, suggested_insurer_percent: f.suggested_insurer_percent,
       default_insurer_id: f.default_insurer_id || null, goal_net_basis: f.goal_net_basis, theme: theme.value, updated_at: new Date().toISOString(),
     }).eq('user_id', (await supabase.auth.getUser()).data.user!.id)
     fail(error); await data.refresh()
@@ -44,6 +44,7 @@ async function addHoliday() {
     <div class="card space-y-3">
       <h2 class="font-bold">Corretor e comissões</h2>
       <div><label class="label">Nome do corretor</label><input v-model="f.broker_name" class="input" /></div>
+      <div><label class="label" for="bem">E-mail do corretor</label><input id="bem" v-model="f.broker_email" type="email" class="input" /><p class="mt-1 text-xs text-mute">Aparece no cabeçalho dos relatórios em PDF.</p></div>
       <div>
         <label class="label">Percentual que fica com o corretor (%)</label>
         <input v-model.number="f.broker_percent" type="number" step="0.01" min="0" max="100" class="input" />

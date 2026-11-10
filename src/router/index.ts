@@ -4,17 +4,20 @@ import { useAuth } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: '/privacidade', component: () => import('@/pages/LegalPage.vue'), meta: { public: true, doc: 'privacidade' } },
+    { path: '/termos', component: () => import('@/pages/LegalPage.vue'), meta: { public: true, doc: 'termos' } },
+    { path: '/cookies', component: () => import('@/pages/LegalPage.vue'), meta: { public: true, doc: 'cookies' } },
     { path: '/login', component: () => import('@/pages/LoginPage.vue'), meta: { public: true } },
     {
       path: '/', component: () => import('@/layouts/AppLayout.vue'),
       children: [
         { path: '', name: 'dashboard', component: () => import('@/pages/DashboardPage.vue'), meta: { title: 'Dashboard' } },
         { path: 'clientes', redirect: '/vendas' },
-                { path: 'vendas', component: () => import('@/pages/SalesPage.vue'), meta: { title: 'Vendas' } },
-        { path: 'vendas/:id', component: () => import('@/pages/SaleDetailPage.vue'), meta: { title: 'Venda' } },
+                { path: 'vendas', component: () => import('@/pages/SalesHubPage.vue'), meta: { title: 'Vendas e cancelamentos' } },
+                { path: 'vendas/:id', component: () => import('@/pages/SaleDetailPage.vue'), meta: { title: 'Venda' } },
         { path: 'comissoes', component: () => import('@/pages/CommissionsPage.vue'), meta: { title: 'Comissões' } },
-                { path: 'cancelamentos', component: () => import('@/pages/CancellationsPage.vue'), meta: { title: 'Cancelamentos' } },
-        { path: 'conferencia', redirect: { path: '/relatorios', query: { tab: 'conferencia' } } },
+                { path: 'cancelamentos', redirect: { path: '/vendas', query: { tab: 'cancelamentos' } } },
+                { path: 'conferencia', redirect: { path: '/relatorios', query: { tab: 'conferencia' } } },
                 { path: 'conferencia/:id', component: () => import('@/pages/ReconciliationPage.vue'), meta: { title: 'Conferência' } },
         { path: 'calendario', component: () => import('@/pages/CalendarPage.vue'), meta: { title: 'Calendário' } },
         { path: 'historico', redirect: '/vendas' },

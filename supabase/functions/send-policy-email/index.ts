@@ -15,6 +15,8 @@ Deno.serve(async req => {
     // Usa o token do próprio usuário: o RLS garante que só venda dele é lida.
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
+    const { data: allowed } = await sb.rpc('rate_limit_hit', { p_key: 'email', p_max: 60, p_window_seconds: 3600 })
+    if (allowed === false) return json({ error: 'Limite de e-mails por hora atingido. Tente mais tarde.' }, 429)
     const { data: s, error } = await sb.from('sales')
       .select('*, clients(full_name, cpf, phone), insurers(name), products(name)').eq('id', sale_id).single()
     if (error || !s) return json({ error: 'Venda não encontrada' }, 404)

@@ -46,9 +46,9 @@ export const useData = defineStore('data', () => {
     holidays.value = (q[9].data ?? []).map((h: { day: string }) => h.day)
     loaded.value = true
   }
-  async function bootstrap(name: string) {
-    const { error } = await supabase.rpc('bootstrap_account', { p_name: name })
-    fail(error)
+  async function bootstrap(name: string, email = '') {
+    fail((await supabase.rpc('bootstrap_account', { p_name: name })).error)
+    if (email) fail((await supabase.from('settings').update({ broker_email: email }).eq('user_id', (await supabase.auth.getUser()).data.user!.id)).error)
     await refresh()
   }
 

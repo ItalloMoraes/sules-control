@@ -11,8 +11,9 @@ import BaseChart from '@/components/BaseChart.vue'
 const data = useData()
 type Row = typeof data.sales[number]
 const today = todayISO()
-const f = reactive({ from: new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 6, 1)).toISOString().slice(0, 10), to: monthEnd(today) })
-const rows = computed(() => data.sales.filter(s => (!f.from || s.sale_date >= f.from) && (!f.to || s.sale_date <= f.to)))
+const f = reactive({ from: new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 6, 1)).toISOString().slice(0, 10), to: monthEnd(today), insurer: '', product: '', origin: '' })
+const rows = computed(() => data.sales.filter(s => (!f.from || s.sale_date >= f.from) && (!f.to || s.sale_date <= f.to)
+  && (!f.insurer || s.insurer_id === f.insurer) && (!f.product || s.product_id === f.product) && (!f.origin || s.origin === f.origin)))
 const active = computed(() => rows.value.filter(s => s.status !== 'cancelada'))
 const cancelled = computed(() => rows.value.filter(s => s.status === 'cancelada'))
 const sum = (xs: Row[], k: 'premium' | 'gross_commission' | 'net_commission') => round2(xs.reduce((a, s) => a + s[k], 0))
@@ -55,7 +56,12 @@ const weekChart = computed<ChartConfiguration>(() => ({ type: 'bar', data: { lab
 </script>
 <template>
   <PageHeader title="Comissões" sub="Seus números detalhados. A comissão vale desde o cadastro; vendas canceladas ficam de fora." />
-  <div class="card mb-4 filters"><UDateRange v-model:from="f.from" v-model:to="f.to" class="input" aria-label="Período" /></div>
+  <div class="card mb-4 filters">
+    <UDateRange v-model:from="f.from" v-model:to="f.to" class="input" aria-label="Período" />
+    <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Todas as seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
+    <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Todos os produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
+    <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Todas as origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
+  </div>
 
   <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
     <StatCard label="Comissão líquida" :value="brl(m.net)" tone="gold" :hint="`${m.count} vendas ativas`" />

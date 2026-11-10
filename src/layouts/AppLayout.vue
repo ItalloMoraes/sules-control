@@ -8,19 +8,20 @@ import { toasts, run } from '@/composables/useToast'
 import AppIcon from '@/components/AppIcon.vue'
 import AmbientParticles from '@/components/AmbientParticles.vue'
 import { SUHAI_SITE } from '@/config'
+import { CONTATO } from '@/contact'
 import NotificationBell from '@/components/NotificationBell.vue'
 import ChatWidget from '@/components/ChatWidget.vue'
 
 const auth = useAuth(), data = useData(), router = useRouter()
 const { theme, toggle } = useTheme()
 const open = ref(false)
-const bootName = ref('')
+const bootName = ref(''), bootEmail = ref(auth.session?.user.email ?? '')
 const route = useRoute()
 const collapsed = ref(localStorage.getItem('sc-nav') === '1')
 function toggleNav() { collapsed.value = !collapsed.value; localStorage.setItem('sc-nav', collapsed.value ? '1' : '0') }
 const nav = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard' }, { to: '/vendas', label: 'Vendas', icon: 'sales' },
-  { to: '/comissoes', label: 'Comissões', icon: 'commissions' }, { to: '/cancelamentos', label: 'Cancelamentos', icon: 'cancellations' }, { to: '/calendario', label: 'Calendário', icon: 'calendar' },
+  { to: '/', label: 'Dashboard', icon: 'dashboard' }, { to: '/vendas', label: 'Vendas e cancelamentos', icon: 'sales' },
+  { to: '/comissoes', label: 'Comissões', icon: 'commissions' },  { to: '/calendario', label: 'Calendário', icon: 'calendar' },
   { to: '/notas', label: 'Notas e mensagens', icon: 'notes' }, { to: '/metas', label: 'Metas e conversão', icon: 'goals' },
   { to: '/projecoes', label: 'Projeções e comparativos', icon: 'forecast' }, { to: '/relatorios', label: 'Relatórios e conferência', icon: 'reports' },
 ]
@@ -69,17 +70,28 @@ async function out() { await auth.logout(); router.push('/login') }
           <button class="btn !px-2.5" aria-label="Sair" title="Sair" @click="out"><AppIcon name="door" /></button>
         </div>
       </header>
-      <main class="mx-auto max-w-7xl py-4">
+      <main id="conteudo" tabindex="-1" class="mx-auto max-w-7xl py-4">
         <div v-if="data.needsBootstrap && data.loaded" class="card mx-auto mt-10 max-w-md">
           <h2 class="text-lg font-bold">Configurar sua conta</h2>
           <p class="mb-3 text-sm text-mute">Cria a Suhai como seguradora padrão, os produtos iniciais e as configurações.</p>
           <label class="label" for="bn">Seu nome</label>
           <input id="bn" v-model="bootName" class="input mb-3" placeholder="Nome do corretor" />
-          <button class="btn btn-primary" :disabled="!bootName.trim()"
-                  @click="run(() => data.bootstrap(bootName.trim()), 'Conta configurada')">Criar configuração inicial</button>
+          <label class="label" for="be">E-mail do corretor</label>
+          <input id="be" v-model="bootEmail" type="email" class="input mb-3" placeholder="seu@email.com" />
+          <button class="btn btn-primary" :disabled="!bootName.trim() || !bootEmail.trim()"
+                  @click="run(() => data.bootstrap(bootName.trim(), bootEmail.trim()), 'Conta configurada')">Criar configuração inicial</button>
         </div>
         <router-view v-else v-slot="{ Component }"><transition name="page" mode="out-in"><component :is="Component" /></transition></router-view>
       </main>
+      <footer class="mx-auto max-w-7xl px-2 pb-4 pt-6 text-xs text-mute">
+        <nav class="flex flex-wrap gap-x-4 gap-y-1" aria-label="Informações legais">
+          <span>© {{ new Date().getFullYear() }} Sules Control</span>
+          <router-link to="/privacidade" class="hover:text-gold hover:underline">Privacidade</router-link>
+          <router-link to="/termos" class="hover:text-gold hover:underline">Termos</router-link>
+          <router-link to="/cookies" class="hover:text-gold hover:underline">Cookies</router-link>
+          <a :href="`mailto:${CONTATO.email}`" class="hover:text-gold hover:underline">Contato</a>
+        </nav>
+      </footer>
     </div>
     <ChatWidget />
     <div class="fixed bottom-4 left-4 z-50 flex flex-col gap-2" aria-live="polite">

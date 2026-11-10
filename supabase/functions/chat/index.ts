@@ -1,4 +1,6 @@
 // Chat rápido do corretor. A chave da Anthropic fica só aqui (secret), nunca no navegador.
+import { createClient } from 'npm:@supabase/supabase-js@2'
+
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' }
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 const SYSTEM = `Você ajuda um corretor que vende seguro auto (carro e moto) pela Suhai Seguradora.
@@ -9,6 +11,10 @@ Sem markdown pesado.`
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
+    // Limite por usuário: protege o custo da API de IA contra uso excessivo.
+    const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
+    const { data: allowed } = await sb.rpc('rate_limit_hit', { p_key: 'chat', p_max: 40, p_window_seconds: 3600 })
+    if (allowed === false) return json({ error: 'Muitas solicitações. Tente novamente em alguns minutos.' }, 429)
     const { messages } = await req.json()
     const msgs = (Array.isArray(messages) ? messages : []).slice(-12)
       .filter((m: { role: string; content: unknown }) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')

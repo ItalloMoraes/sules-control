@@ -77,3 +77,8 @@ main .animate-on-scroll { --ry: 10px; --rb: 3px; animation-duration: .32s; anima
 /* tabelas rolam na horizontal dentro do cartão, sem alargar a página */
 body { overflow-x: clip; }
 .tbl th, .tbl td { white-space: nowrap; }
+
+/* navegação por teclado: foco sempre visível */
+:focus-visible { outline: 2px solid rgb(var(--c-gold)); outline-offset: 2px; }
+.input:focus-visible { outline: none; }
+#conteudo:focus { outline: none; }

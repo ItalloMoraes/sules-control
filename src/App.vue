@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useTheme } from '@/composables/useTheme'
 import { envMissing } from '@/services/supabase'
+import CookieNotice from '@/components/CookieNotice.vue'
 useTheme()
 </script>
 <template>
+  <a href="#conteudo" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-gold focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white dark:focus:text-[#04210f]">Pular para o conteúdo</a>
   <main v-if="envMissing" class="mx-auto mt-16 max-w-lg p-6">
     <div class="card">
       <h1 class="mb-2 text-xl font-bold">Falta configurar o banco</h1>
@@ -14,4 +16,5 @@ VITE_SUPABASE_ANON_KEY=sua-chave-publishable</pre>
     </div>
   </main>
   <router-view v-else />
+  <CookieNotice />
 </template>

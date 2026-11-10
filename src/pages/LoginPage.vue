@@ -24,7 +24,7 @@ const features = [
 <template>
   <div class="bg-ink">
     <!-- Hero: ocasião rara, movimento expressivo -->
-    <section class="relative flex min-h-screen items-center overflow-hidden bg-[radial-gradient(ellipse_at_top_left,rgb(var(--c-gold)/.14),transparent_55%)]">
+    <section id="conteudo" tabindex="-1" class="relative flex min-h-screen items-center overflow-hidden bg-[radial-gradient(ellipse_at_top_left,rgb(var(--c-gold)/.14),transparent_55%)]">
       <AmbientParticles />
       <div class="relative mx-auto grid w-full max-w-6xl items-center gap-10 p-6 md:grid-cols-2">
         <div class="flex flex-col gap-3">
@@ -95,7 +95,8 @@ const features = [
       <div class="border-t border-current/20">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 py-5 text-xs opacity-85">
           <span>© {{ year }} Sules Control. Todos os direitos reservados.</span>
-          <span>Suhai Seguradora e demais marcas citadas pertencem aos seus respectivos proprietários.</span>
+          <nav class="flex flex-wrap gap-x-4" aria-label="Informações legais"><router-link to="/privacidade" class="hover:underline">Política de Privacidade</router-link><router-link to="/termos" class="hover:underline">Termos de Serviço</router-link><router-link to="/cookies" class="hover:underline">Aviso de cookies</router-link></nav>
+          <span class="w-full">Suhai Seguradora e demais marcas citadas pertencem aos seus respectivos proprietários.</span>
         </div>
       </div>
     </footer>

@@ -31,7 +31,7 @@ async function imgData(url: string): Promise<string | null> {
   } catch { return null }
 }
 /** PDF no visual do site: cabeçalho com marca e mascote, tabela verde com linhas alternadas e rodapé numerado. */
-export async function toPDF(t: Table, name: string, subtitle = '', author = '') {
+export async function toPDF(t: Table, name: string, subtitle = '', author = '', email = '') {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight()
   const G: [number, number, number] = [30, 138, 68], INK: [number, number, number] = [29, 29, 31], MUTE: [number, number, number] = [110, 110, 115]
@@ -42,7 +42,7 @@ export async function toPDF(t: Table, name: string, subtitle = '', author = '') 
     if (mascot) { const p = doc.getImageProperties(mascot), h = 18, w = (h * p.width) / p.height; doc.addImage(mascot, 'PNG', 12, 4, w, h); x += w + 4 }
     doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...G); doc.text('Su', x, 15)
     const sw = doc.getTextWidth('Su'); doc.setTextColor(...INK); doc.text('les Control', x + sw, 15)
-    doc.setFontSize(9); doc.setTextColor(...MUTE); if (author) doc.text(`Corretor: ${author}`, x, 21)
+    doc.setFontSize(9); doc.setTextColor(...MUTE); if (author) doc.text(`Corretor: ${author}${email ? '  ·  ' + email : ''}`, x, 21)
     doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...INK); doc.text(t.title, W - 12, 12, { align: 'right' })
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...MUTE)
     if (subtitle) doc.text(subtitle, W - 12, 19, { align: 'right' })

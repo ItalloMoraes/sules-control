@@ -45,7 +45,7 @@ supabase/
    npm install
    ```
 2. No Supabase, crie um projeto. Em *Authentication*, desative o cadastro público de novos usuários e crie o seu usuário manualmente.
-3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql`, `005_proposals.sql` e `006_delete_sales.sql`.
+3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql`, `005_proposals.sql`, `006_delete_sales.sql` e `007_security.sql`.
 4. Crie o arquivo de ambiente e preencha:
    ```bash
    cp .env.example .env
@@ -107,6 +107,11 @@ npm run build    # checagem de tipos + build de produção
 Ative os backups do banco no Supabase (ou agende `pg_dump`).
 
 ## Segurança
+
+- **HTTPS/TLS:** o site é servido em HTTPS pela Vercel, e o banco só aceita conexões protegidas. O `vercel.json` ainda envia HSTS, `X-Frame-Options`, `nosniff`, `Referrer-Policy` e `Permissions-Policy`. A `Content-Security-Policy` está em modo de observação (*Report-Only*); depois de usar o site sem erros no console, troque o nome do cabeçalho para `Content-Security-Policy` para aplicá-la.
+- **Dados em repouso:** criptografados pela infraestrutura do Supabase (conforme o provedor). Arquivos PDF ficam em espaço privado, abertos por link temporário.
+- **Rate limiting em camadas:** (1) Supabase Auth limita tentativas de login e envio de e-mails (*Authentication → Rate Limits*); (2) as funções `chat` e `send-policy-email` limitam chamadas por usuário (`007_security.sql`); (3) o login bloqueia por 1 minuto após 5 erros seguidos; (4) opcional: regra de limite na Vercel (*Firewall → Configure → New Rule → Rate Limit*), por IP, que no plano Hobby permite 1 regra desse tipo.
+- **Privacidade e termos:** páginas `/privacidade`, `/termos` e `/cookies`, com o canal de contato configurado em `src/contact.ts`. Os textos são um modelo e devem ser revisados por um advogado.
 
 - Todas as tabelas usam *Row Level Security*: cada usuário acessa apenas os próprios dados.
 - Chaves privadas (API de IA, senha de e-mail) ficam somente nas funções de servidor.

@@ -69,7 +69,7 @@ const sub = computed(() => `Período ${dateBR(f.from)} a ${dateBR(f.to)}`)
 </script>
 <template>
   <PageHeader title="Relatórios e exportações" sub="Exportações respeitam os filtros selecionados.">
-    <button class="btn btn-primary" @click="backupAll">Backup completo</button><button class="btn" @click="toPDF(table, name, sub, data.settings?.broker_name ?? '')">PDF</button><button class="btn" @click="toXLSX(table, name)">XLSX</button><button class="btn" @click="toCSV(table, name)">CSV</button>
+    <button class="btn btn-primary" @click="backupAll">Backup completo</button><button class="btn" @click="toPDF(table, name, sub, data.settings?.broker_name ?? '', data.settings?.broker_email ?? '')">PDF</button><button class="btn" @click="toXLSX(table, name)">XLSX</button><button class="btn" @click="toCSV(table, name)">CSV</button>
   </PageHeader>
   <p class="mb-3 text-xs text-mute">Último backup: {{ lastBackup ? dateBR(lastBackup) : 'ainda não feito' }}. O plano gratuito não tem backup automático; baixe uma cópia a cada poucos dias.</p>
   <div class="card mb-4 grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
