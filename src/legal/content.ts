@@ -13,7 +13,7 @@ export const DOCS: Record<string, { title: string; intro: string; blocks: Block[
       { h: 'Papéis no tratamento', p: ['Em relação aos dados dos clientes cadastrados pelo corretor, o corretor que usa a conta é o controlador, e o Sules Control atua como operador, tratando os dados conforme as instruções do corretor.', 'Em relação aos dados da própria conta (e-mail de acesso, nome e e-mail do corretor, configurações), o responsável pelo sistema atua como controlador.'] },
       { h: 'Dados que tratamos', ul: [
         'Conta e acesso: e-mail de login, senha (guardada somente em formato protegido pelo provedor de autenticação), nome e e-mail do corretor, preferências.',
-        'Dados de clientes inseridos pelo corretor: nome, CPF, telefone, e-mail, placa do veículo, números de proposta e apólice, valores, observações e o PDF da proposta.',
+        'Dados de clientes inseridos pelo corretor: nome, CPF, telefone, e-mail, CEP e endereço (cidade, estado), placa do veículo, números de proposta e apólice, valores, observações e o PDF da proposta.',
         'Dados técnicos de segurança: endereço IP, data e hora de acesso e registros de alterações, mantidos pelos provedores e pelo sistema.',
         'Mensagens digitadas no assistente de chat, quando esse recurso está ativado.',
         'Não solicitamos dados pessoais sensíveis (como saúde ou biometria). Pedimos que você não os insira nos campos livres.'] },
@@ -28,6 +28,7 @@ export const DOCS: Record<string, { title: string; intro: string; blocks: Block[
         'Vercel: hospedagem do site.',
         'Provedor da caixa de e-mail do corretor (Titan/HostGator): envio do e-mail automático com os dados da venda ao destinatário configurado (por exemplo, o RH).',
         'Anthropic: processamento das mensagens do assistente de chat, quando ativado.',
+        'ViaCEP: serviço público de consulta de endereço, que recebe apenas o CEP digitado.',
         'Destinatários que o próprio corretor escolher, como o RH ou a seguradora.'] },
       { h: 'Transferência internacional', p: ['Alguns prestadores mantêm servidores fora do Brasil, inclusive nos Estados Unidos. Esses envios ocorrem para operar o serviço, com as salvaguardas contratuais oferecidas pelos próprios prestadores, conforme o art. 33 da LGPD.'] },
       { h: 'Segurança', ul: [
@@ -73,7 +74,7 @@ export const DOCS: Record<string, { title: string; intro: string; blocks: Block[
         'sc-last-backup: data do último backup baixado, para o lembrete no dashboard. Preferência.',
         'sc-cookies-ok: registra que você viu este aviso.',
         'sc-login-fails e sc-login-lock: controle de tentativas de login, para segurança.'] },
-      { h: 'Serviços de terceiros', p: ['As fontes de letra são servidas pelo próprio site, sem chamadas ao Google. As conexões ao banco de dados vão ao Supabase, que pode registrar o endereço IP para segurança.'] },
+      { h: 'Serviços de terceiros', p: ['As fontes de letra são servidas pelo próprio site, sem chamadas ao Google. As conexões ao banco de dados vão ao Supabase, que pode registrar o endereço IP para segurança. Ao digitar um CEP, ele é enviado ao ViaCEP para buscar o endereço.'] },
       { h: 'Como apagar', p: ['Você pode apagar esses dados nas configurações do navegador (limpar dados do site). Ao apagar a sessão, será preciso entrar de novo. Como usamos apenas armazenamento essencial e preferências, não pedimos consentimento para ele.'] },
     ],
   },

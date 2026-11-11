@@ -80,7 +80,7 @@ const sub = computed(() => `Período ${dateBR(f.from)} a ${dateBR(f.to)}`)
     <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
     <USelect v-if="f.type === 'comercial'" v-model="f.groupBy" class="input" aria-label="Agrupar"><option value="status">Por status</option><option value="seguradora">Por seguradora</option><option value="produto">Por produto</option><option value="origem">Por origem</option></USelect>
   </div>
-  <div class="card overflow-x-auto p-0"><div class="overflow-x-auto"><table class="tbl"><thead><tr><th v-for="h in table.headers" :key="h">{{ h }}</th></tr></thead>
+  <div class="card overflow-x-auto p-0"><div class="tbl-scroll"><table class="tbl"><thead><tr><th v-for="h in table.headers" :key="h">{{ h }}</th></tr></thead>
     <tbody><tr v-for="(r, i) in table.rows" :key="i"><td v-for="(c, j) in r" :key="j" class="num">{{ c }}</td></tr>
       <tr v-if="!table.rows.length"><td :colspan="table.headers.length" class="py-6 text-center text-mute">Sem dados para o filtro.</td></tr></tbody></table></div></div>
 </template>

@@ -7,7 +7,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import StatCard from '@/components/StatCard.vue'
 
 const data = useData()
-const p = computed(() => project(data.dataset, todayISO(), new Set(data.holidays)))
+const p = computed(() => project(data.dataset, todayISO(), data.holidaySet))
 const goal = computed(() => data.goals.find(g => g.month === todayISO().slice(0, 7) + '-01'))
 const sc = computed(() => [['Conservador', p.value.scenarios.conservador], ['Provável', p.value.scenarios.provavel], ['Otimista', p.value.scenarios.otimista]] as const)
 const conf = computed(() => ({ baixa: 'text-neg', media: 'text-warn', alta: 'text-pos' }[p.value.confidence]))

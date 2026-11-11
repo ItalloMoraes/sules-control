@@ -9,6 +9,7 @@ export type Classification =
 export interface Insurer { id: string; name: string; is_default: boolean; active: boolean }
 export interface Product { id: string; name: string; active: boolean }
 export interface Client {
+  cep?: string | null; street?: string | null; neighborhood?: string | null; city?: string | null; state?: string | null
   id: string; full_name: string; cpf: string | null; phone: string | null
   email: string | null; notes: string | null; archived_at: string | null; created_at: string
 }

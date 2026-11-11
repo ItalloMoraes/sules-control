@@ -82,7 +82,7 @@ async function confirmImport() {
     <div v-if="parsed.unparsed.length" class="mb-3 rounded-md border border-warn/50 p-3 text-sm">
       <b class="text-warn">{{ parsed.unparsed.length }} linha(s) não reconhecidas</b> (nada foi descartado em silêncio):
       <ul class="mt-1 max-h-28 overflow-y-auto text-xs text-mute"><li v-for="u in parsed.unparsed" :key="u.line_no">{{ u.text }}</li></ul></div>
-    <div class="max-h-[28rem] overflow-auto"><div class="overflow-x-auto"><table class="tbl">
+    <div class="max-h-[28rem] overflow-auto"><div class="tbl-scroll"><table class="tbl">
       <thead><tr><th>Cliente</th><th>Dt. In. Vig.</th><th>Proposta</th><th>Apólice</th><th>Endosso</th><th>Produto</th><th>Neg</th><th class="text-right">Prêmio</th><th class="text-right">%</th><th class="text-right">Comissão</th><th></th></tr></thead>
       <tbody><tr v-for="i in sorted" :key="i.line_no" :class="{ 'bg-warn/5': i.needs_review }">
         <td><input v-model="i.client_name" class="input min-w-40" /></td><td>{{ dateBR(i.policy_start_date) }}</td>
@@ -93,7 +93,7 @@ async function confirmImport() {
         <td><button class="btn" @click="remove(i)" aria-label="Remover linha">✕</button></td></tr></tbody></table></div></div>
   </div>
 
-  <div class="card overflow-x-auto p-0"><h2 class="p-4 pb-0 font-bold">Histórico mensal</h2><div class="overflow-x-auto"><table class="tbl">
+  <div class="card overflow-x-auto p-0"><h2 class="p-4 pb-0 font-bold">Histórico mensal</h2><div class="tbl-scroll"><table class="tbl">
     <thead><tr><th>Mês</th><th>Arquivo</th><th>Registros</th><th>Conferidos</th><th>Divergências</th><th>Situação</th></tr></thead>
     <tbody><tr v-for="r in reports" :key="r.id" class="cursor-pointer" @click="router.push('/conferencia/' + r.id)">
       <td>{{ dateBR(r.reference_month).slice(3) }}</td><td>{{ r.file_name }}</td>

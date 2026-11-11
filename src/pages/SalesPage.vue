@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useCepField } from '@/composables/useCepField'
 import { supabase, fail } from '@/services/supabase'
 import { useData } from '@/stores/data'
 import { sendSaleEmail } from '@/services/mail'
@@ -13,7 +14,7 @@ import StatusBadge from '@/components/StatusBadge.vue'
 import CopyBtn from '@/components/CopyBtn.vue'
 import { uploadProposal } from '@/services/proposals'
 
-const data = useData(), router = useRouter()
+const data = useData(), router = useRouter(), route = useRoute()
 const filters = reactive({ q: '', status: '', origin: '', insurer: '', product: '', from: '', to: '' })
 const modal = ref(false)
 const blank = () => ({
@@ -24,7 +25,10 @@ const blank = () => ({
 })
 const f = reactive(blank())
 // Cliente digitado na própria venda: se já existe, reaproveita; se não, cadastra junto.
-const cl = reactive({ name: '', cpf: '', phone: '', email: '' })
+const cl = reactive({ name: '', cpf: '', phone: '', email: '', cep: '', street: '', neighborhood: '', city: '', state: '' })
+const cepField = useCepField(cl)
+// o botão "Nova venda" do dashboard abre o formulário direto
+onMounted(() => { if (route.query.novo) { open(); router.replace({ query: {} }) } })
 const norm = (t: string) => t.trim().toLowerCase()
 const existing = computed(() => data.clients.find(c => !c.archived_at && norm(c.full_name) === norm(cl.name)))
 const matches = computed(() => norm(cl.name).length < 2 ? [] : data.clients.filter(c => !c.archived_at && norm(c.full_name).includes(norm(cl.name)) && norm(c.full_name) !== norm(cl.name)).slice(0, 5))
@@ -61,7 +65,8 @@ function open(id?: string) {
     origin: s.origin, status: s.status, notes: s.notes ?? '', change_reason: '',
   } : blank())
   const c = data.clients.find(x => x.id === f.client_id)
-  Object.assign(cl, { name: c?.full_name ?? '', cpf: '', phone: '', email: '' })
+  Object.assign(cl, { name: c?.full_name ?? '', cpf: '', phone: '', email: '', cep: '', street: '', neighborhood: '', city: '', state: '' })
+  cepField.info.value = ''
   pdfFile.value = null
   modal.value = true
 }
@@ -90,7 +95,7 @@ async function save() {
     else {
       let cid = existing.value?.id
       if (!cid) {
-        const c = await supabase.from('clients').insert({ full_name: cl.name.trim(), cpf: cl.cpf.trim() || null, phone: cl.phone.trim() || null, email: cl.email.trim() || null }).select('id').single()
+        const c = await supabase.from('clients').insert({ full_name: cl.name.trim(), cpf: cl.cpf.trim() || null, phone: cl.phone.trim() || null, email: cl.email.trim() || null, cep: cl.cep.replace(/\D/g, '') || null, street: cl.street || null, neighborhood: cl.neighborhood || null, city: cl.city || null, state: cl.state || null }).select('id').single()
         fail(c.error); cid = c.data!.id
       }
       const r = await supabase.from('sales').insert({ ...row, client_id: cid }).select('id').single()
@@ -114,7 +119,7 @@ async function save() {
     <UDateRange v-model:from="filters.from" v-model:to="filters.to" class="input" aria-label="Período" />
   </div>
   <div class="card overflow-x-auto p-0">
-    <div class="overflow-x-auto"><table class="tbl">
+    <div class="tbl-scroll"><table class="tbl">
       <thead><tr><th>Data</th><th>Cliente</th><th>Produto</th><th>Origem</th><th class="text-right">Prêmio</th><th class="text-right">Bruta</th><th class="text-right">Líquida</th><th>Status</th><th></th></tr></thead>
       <tbody>
         <tr v-for="s in list" :key="s.id">
@@ -145,6 +150,8 @@ async function save() {
         <div><label class="label" for="cc">CPF</label><input id="cc" v-model="cl.cpf" class="input" inputmode="numeric" /></div>
         <div><label class="label" for="ct">Telefone</label><input id="ct" v-model="cl.phone" class="input" inputmode="tel" /></div>
         <div class="sm:col-span-2"><label class="label" for="ce">E-mail</label><input id="ce" v-model="cl.email" type="email" class="input" /></div>
+        <div><label class="label" for="cp">CEP</label><input id="cp" v-model="cl.cep" class="input" inputmode="numeric" maxlength="9" placeholder="00000-000" @input="cepField.onInput" /></div>
+        <div class="flex items-end pb-2 text-xs text-mute" aria-live="polite">{{ cepField.info.value }}</div>
       </template>
       <div><label class="label">Data da venda</label><UDate v-model="f.sale_date" class="input" /></div>
       <div><label class="label" for="pl">Placa</label><input id="pl" v-model="f.plate" class="input uppercase" /></div>

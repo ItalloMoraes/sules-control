@@ -18,7 +18,7 @@ watch([month, () => data.goals], () => {
 }, { immediate: true })
 
 const s = computed(() => summarize(data.dataset, { from: month.value, to: monthEnd(month.value) }))
-const proj = computed(() => project(data.dataset, todayISO(), new Set(data.holidays)))
+const proj = computed(() => project(data.dataset, todayISO(), data.holidaySet))
 const isCurrent = computed(() => month.value === monthStart(todayISO()))
 const rows = computed(() => {
   const netDone = g.net_basis === 'after_reversals' ? s.value.adjustedResult : s.value.net

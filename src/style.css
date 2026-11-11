@@ -82,3 +82,7 @@ body { overflow-x: clip; }
 :focus-visible { outline: 2px solid rgb(var(--c-gold)); outline-offset: 2px; }
 .input:focus-visible { outline: none; }
 #conteudo:focus { outline: none; }
+
+/* a barra de rolagem lateral fica no pé da área visível da tabela (a tabela rola por dentro, com o cabeçalho fixo) */
+.tbl-scroll { overflow: auto; max-height: max(20rem, calc(100dvh - 15rem)); }
+.tbl-scroll .tbl thead th { position: sticky; top: 0; z-index: 1; background: rgb(var(--c-panel)); }

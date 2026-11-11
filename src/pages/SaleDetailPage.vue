@@ -6,6 +6,7 @@ import { useData } from '@/stores/data'
 import { notify, run } from '@/composables/useToast'
 import { brl, dateBR, todayISO, pct } from '@/utils/format'
 import { proposalUrl } from '@/services/proposals'
+import { useCepField } from '@/composables/useCepField'
 import PageHeader from '@/components/PageHeader.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import ModalBox from '@/components/ModalBox.vue'
@@ -47,15 +48,18 @@ async function deleteSale() {
   }, 'Venda excluída')) router.push('/vendas')
 }
 
-const ed = reactive({ open: false, full_name: '', cpf: '', phone: '', email: '' })
+const ed = reactive({ open: false, full_name: '', cpf: '', phone: '', email: '', cep: '', street: '', neighborhood: '', city: '', state: '' })
+const cepEd = useCepField(ed)
 function openClient() {
   const c = client.value
-  if (c) Object.assign(ed, { open: true, full_name: c.full_name, cpf: c.cpf ?? '', phone: c.phone ?? '', email: c.email ?? '' })
+  if (!c) return
+  Object.assign(ed, { open: true, full_name: c.full_name, cpf: c.cpf ?? '', phone: c.phone ?? '', email: c.email ?? '', cep: c.cep ?? '', street: c.street ?? '', neighborhood: c.neighborhood ?? '', city: c.city ?? '', state: c.state ?? '' })
+  cepEd.refresh()
 }
 async function saveClient() {
   if (!client.value || !ed.full_name.trim()) return alert('Informe o nome do cliente.')
   if (await run(async () => {
-    fail((await supabase.from('clients').update({ full_name: ed.full_name.trim(), cpf: ed.cpf.trim() || null, phone: ed.phone.trim() || null, email: ed.email.trim() || null }).eq('id', client.value!.id)).error)
+    fail((await supabase.from('clients').update({ full_name: ed.full_name.trim(), cpf: ed.cpf.trim() || null, phone: ed.phone.trim() || null, email: ed.email.trim() || null, cep: ed.cep.replace(/\D/g, '') || null, street: ed.street || null, neighborhood: ed.neighborhood || null, city: ed.city || null, state: ed.state || null }).eq('id', client.value!.id)).error)
     await data.refresh()
   }, 'Cliente atualizado')) ed.open = false
 }
@@ -79,6 +83,7 @@ async function saveClient() {
       <span class="inline-flex items-center gap-0.5 text-sm text-mute">Placa {{ sale.plate ?? '—' }}</span>
       <span v-if="client?.cpf" class="inline-flex items-center gap-0.5 text-sm text-mute">CPF {{ client.cpf }}<CopyBtn :text="client.cpf" label="Copiar CPF" /></span>
       <span v-if="client?.phone" class="inline-flex items-center gap-0.5 text-sm text-mute">{{ client.phone }}<CopyBtn :text="client.phone" label="Copiar telefone" /></span>
+      <span v-if="client?.city" class="inline-flex items-center gap-0.5 text-sm text-mute">{{ client.city }}/{{ client.state }}</span>
       <span v-if="client?.email" class="inline-flex items-center gap-0.5 text-sm text-mute">{{ client.email }}<CopyBtn :text="client.email" label="Copiar e-mail" /></span></div>
 
     <div v-if="canc" class="card mb-4 border-neg/50">
@@ -106,6 +111,8 @@ async function saveClient() {
         <div><label class="label" for="ec">CPF</label><input id="ec" v-model="ed.cpf" class="input" inputmode="numeric" /></div>
         <div><label class="label" for="et">Telefone</label><input id="et" v-model="ed.phone" class="input" inputmode="tel" /></div>
         <div class="sm:col-span-2"><label class="label" for="ee">E-mail</label><input id="ee" v-model="ed.email" type="email" class="input" /></div>
+        <div><label class="label" for="ecp">CEP</label><input id="ecp" v-model="ed.cep" class="input" inputmode="numeric" maxlength="9" placeholder="00000-000" @input="cepEd.onInput" /></div>
+        <div class="flex items-end pb-2 text-xs text-mute" aria-live="polite">{{ cepEd.info.value }}</div>
       </div>
       <p class="mt-2 text-xs text-mute">A alteração vale para todas as vendas deste cliente.</p>
       <div class="mt-4 flex justify-end gap-2"><button class="btn" @click="ed.open = false">Cancelar</button><button class="btn btn-primary" @click="saveClient">Salvar</button></div>

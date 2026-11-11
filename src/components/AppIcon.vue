@@ -18,6 +18,7 @@ const P: Record<string, string> = {
   door: '<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3M13 20h9M10 12v.01"/><path d="M13 4.56v16.16a1 1 0 0 1-1.24.97L5 20V5.56a2 2 0 0 1 1.52-1.94l4-1A2 2 0 0 1 13 4.56Z"/>',
   copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  back: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
   panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
 }
 </script>

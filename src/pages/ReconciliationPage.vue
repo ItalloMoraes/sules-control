@@ -151,7 +151,7 @@ const pendingAttention = computed(() => rows.value.filter(r => ['divergencia', '
       <UDateRange v-model:from="filters.from" v-model:to="filters.to" class="input" aria-label="Período" />
       <button class="btn" @click="filters.dir = filters.dir === 'asc' ? 'desc' : 'asc'">Vigência {{ filters.dir === 'asc' ? '↑' : '↓' }}</button>
     </div>
-    <div class="card overflow-x-auto p-0"><div class="overflow-x-auto"><table class="tbl">
+    <div class="card overflow-x-auto p-0"><div class="tbl-scroll"><table class="tbl">
       <thead><tr><th>Dt. In. Vig.</th><th>Cliente</th><th>Proposta</th><th>Apólice</th><th>Endosso</th><th>Neg</th><th class="text-right">Prêmio</th><th class="text-right">Comissão</th><th>Situação</th></tr></thead>
       <tbody><tr v-for="r in view" :key="r.id" class="cursor-pointer" @click="open(r)">
         <template v-if="r.production_report_items"><td>{{ dateBR(r.production_report_items.policy_start_date) }}</td><td>{{ r.production_report_items.client_name }}</td>

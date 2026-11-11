@@ -69,7 +69,7 @@ onMounted(() => load().catch(e => run(() => Promise.reject(e), '')))
     </div>
   </div>
   <div v-reveal class="card overflow-x-auto p-0">
-    <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mês</th><th>Leads recebidos</th><th>Vendas convertidas</th><th></th></tr></thead>
+    <div class="tbl-scroll"><table class="tbl"><thead><tr><th>Mês</th><th>Leads recebidos</th><th>Vendas convertidas</th><th></th></tr></thead>
       <tbody><tr v-for="r in [...rows].reverse()" :key="r.id"><td>{{ monthLabel(r.reference_month) }}</td><td class="num">{{ r.leads_received }}</td><td class="num">{{ r.sales_converted }}</td>
         <td class="text-right"><button class="btn btn-danger" @click="remove(r.id)">Remover</button></td></tr></tbody></table></div>
   </div>

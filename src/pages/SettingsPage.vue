@@ -65,7 +65,7 @@ async function addHoliday() {
         <ul class="mb-2 text-sm"><li v-for="p in data.products" :key="p.id" class="flex items-center justify-between border-b border-line/60 py-1.5"><span>{{ p.name }}</span><button class="btn btn-danger" @click="remove('products', p.id, p.name)">Apagar</button></li></ul>
         <div class="flex gap-2"><input v-model="newProduct" class="input" placeholder="Novo produto" /><button class="btn" @click="add('products', newProduct, () => (newProduct = ''))">Adicionar</button></div></div>
       <div class="card"><h2 class="mb-2 font-bold">Feriados (afetam dias úteis nas projeções)</h2>
-        <p class="mb-2 text-sm text-mute">{{ data.holidays.length }} cadastrados</p>
+        <p class="mb-2 text-sm text-mute">{{ data.holidays.length }} cadastrados. Os feriados nacionais já entram sozinhos na projeção.</p>
         <div class="flex gap-2"><UDate v-model="newHoliday" class="input" /><button class="btn" @click="addHoliday">Adicionar</button></div></div>
     </div>
   </div>

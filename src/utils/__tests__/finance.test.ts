@@ -53,3 +53,15 @@ test('comissão conta já no cadastro: pendente entra, cancelada sai, recebida =
   assert.equal(s.pending, 0)
   assert.equal(s.issuedCount, 2)
 })
+
+import { nationalHolidays } from '../holidays.ts'
+import { businessDaysBetween } from '../businessDays.ts'
+
+test('feriados nacionais de 2026 e dias úteis sem eles', () => {
+  assert.deepEqual(nationalHolidays(2026), ['2026-01-01', '2026-04-03', '2026-04-21', '2026-05-01', '2026-09-07', '2026-10-12', '2026-11-02', '2026-11-15', '2026-11-20', '2026-12-25'])
+  assert.ok(nationalHolidays(2027).includes('2027-03-26'))      // Sexta-feira Santa 2027
+  assert.ok(!nationalHolidays(2023).includes('2023-11-20'))     // Consciência Negra só vale a partir de 2024
+  const set = new Set(nationalHolidays(2026))
+  assert.equal(businessDaysBetween('2026-11-01', '2026-11-30'), 21)
+  assert.equal(businessDaysBetween('2026-11-01', '2026-11-30', set), 19)   // tira 2/11 e 20/11 (15/11 é domingo)
+})

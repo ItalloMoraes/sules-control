@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { nationalHolidays } from '@/utils/holidays'
 import { supabase, fail } from '@/services/supabase'
 import type { Cancellation, Client, Goal, Insurer, Product, Receipt, Reversal, Sale, Settings } from '@/types'
 import type { Dataset } from '@/utils/finance'
@@ -16,6 +17,8 @@ export const useData = defineStore('data', () => {
   const reversals = ref<Reversal[]>([])
   const goals = ref<Goal[]>([])
   const holidays = ref<string[]>([])
+  // feriados cadastrados + nacionais (ano passado até 2 anos à frente), usados nos dias úteis da projeção
+  const holidaySet = computed(() => { const s = new Set(holidays.value); const y = new Date().getFullYear(); for (let k = y - 1; k <= y + 2; k++) nationalHolidays(k).forEach(d => s.add(d)); return s })
   const loaded = ref(false)
   const needsBootstrap = ref(false)
 
@@ -63,7 +66,7 @@ export const useData = defineStore('data', () => {
   const clientName = (id: string) => clients.value.find(c => c.id === id)?.full_name ?? '—'
 
   return {
-    settings, insurers, products, clients, sales, receipts, cancellations, reversals, goals, holidays,
+    settings, insurers, products, clients, sales, receipts, cancellations, reversals, goals, holidays, holidaySet,
     loaded, needsBootstrap, refresh, bootstrap, dataset, receivedBySale, clientName,
   }
 })

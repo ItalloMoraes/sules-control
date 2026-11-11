@@ -38,7 +38,7 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
       if (hex) ds.backgroundColor = (c: ScriptableContext<'bar'>) => {   // degradê; o período mais recente fica em destaque
         const a = c.chart.chartArea
         if (!a) return hex
-        const last = c.dataIndex === (c.dataset.data.length - 1), g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom)
+        const last = ds.highlightLast === false || c.dataIndex === (c.dataset.data.length - 1), g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom)
         g.addColorStop(0, alpha(hex, last ? 1 : 0.8)); g.addColorStop(1, alpha(hex, last ? 0.7 : 0.4))
         return g
       }
