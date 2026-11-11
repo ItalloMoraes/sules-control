@@ -47,10 +47,10 @@ async function addHoliday() {
       <div><label class="label" for="bem">E-mail do corretor</label><input id="bem" v-model="f.broker_email" type="email" class="input" /><p class="mt-1 text-xs text-mute">Aparece no cabeçalho dos relatórios em PDF.</p></div>
       <div>
         <label class="label">Percentual que fica com o corretor (%)</label>
-        <input v-model.number="f.broker_percent" type="number" step="0.01" min="0" max="100" class="input" />
+        <MoneyInput v-model="f.broker_percent" class="input" />
         <p class="mt-1 text-xs text-mute">Aplicado só às novas vendas. Cada venda guarda o percentual usado no cadastro.</p>
       </div>
-      <div><label class="label">Percentual sugerido da seguradora (%)</label><input v-model.number="f.suggested_insurer_percent" type="number" step="0.01" class="input" /></div>
+      <div><label class="label">Percentual sugerido da seguradora (%)</label><MoneyInput v-model="f.suggested_insurer_percent" class="input" /></div>
       <div><label class="label">Seguradora padrão</label>
         <USelect v-model="f.default_insurer_id" class="input"><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect></div>
       <div><label class="label">Meta de comissão líquida mede</label>

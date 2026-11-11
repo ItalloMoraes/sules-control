@@ -65,3 +65,18 @@ test('feriados nacionais de 2026 e dias úteis sem eles', () => {
   assert.equal(businessDaysBetween('2026-11-01', '2026-11-30'), 21)
   assert.equal(businessDaysBetween('2026-11-01', '2026-11-30', set), 19)   // tira 2/11 e 20/11 (15/11 é domingo)
 })
+
+import { formatCpf, maskCpf, parseBRL } from '../format.ts'
+
+test('CPF formatado e valores no padrão brasileiro', () => {
+  assert.equal(maskCpf('12345678901'), '123.456.789-01')
+  assert.equal(maskCpf('1234567'), '123.456.7')
+  assert.equal(formatCpf('123.456.789-01'), '123.456.789-01')
+  assert.equal(formatCpf('abc'), 'abc')
+  assert.equal(parseBRL('1.234,56'), 1234.56)
+  assert.equal(parseBRL('R$ 9.999,00'), 9999)
+  assert.equal(parseBRL('1234,5'), 1234.5)
+  assert.equal(parseBRL('1.234'), 1234)
+  assert.equal(parseBRL('12.5'), 12.5)
+  assert.equal(parseBRL(''), 0)
+})

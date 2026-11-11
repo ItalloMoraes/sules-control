@@ -6,6 +6,7 @@ const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 const brl = (n: number) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const pct = (n: number) => `${Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 3 })}%`
+const cpfFmt = (v?: string | null) => { const d = (v ?? '').replace(/\D/g, ''); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : (v ?? '—') }
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
 
 Deno.serve(async req => {
@@ -22,7 +23,7 @@ Deno.serve(async req => {
     if (error || !s) return json({ error: 'Venda não encontrada' }, 404)
 
     const rows: [string, string][] = [
-      ['Cliente', s.clients?.full_name ?? '—'], ['CPF', s.clients?.cpf ?? '—'], ['Telefone', s.clients?.phone ?? '—'],
+      ['Cliente', s.clients?.full_name ?? '—'], ['CPF', cpfFmt(s.clients?.cpf)], ['Telefone', s.clients?.phone ?? '—'],
       ['Seguradora', s.insurers?.name ?? '—'], ['Produto', s.products?.name ?? '—'],
       ['Placa', s.plate ?? '—'],
       ['Proposta', s.proposal_number ?? '—'], ['Apólice', s.policy_number ?? 'ainda não emitida'],

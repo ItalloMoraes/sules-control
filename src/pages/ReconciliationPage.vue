@@ -199,8 +199,8 @@ const pendingAttention = computed(() => rows.value.filter(r => ['divergencia', '
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="sm:col-span-2"><label class="label">Cliente</label><input v-model="edit.client_name" class="input" /></div>
         <div><label class="label">Proposta</label><input v-model="edit.proposal_number" class="input" /></div><div><label class="label">Apólice</label><input v-model="edit.policy_number" class="input" /></div>
-        <div><label class="label">Endosso</label><input v-model="edit.endorsement_number" class="input" /></div><div><label class="label">Prêmio</label><input v-model.number="edit.premium" type="number" step="0.01" class="input" /></div>
-        <div><label class="label">% seguradora</label><input v-model.number="edit.commission_percent" type="number" step="0.01" class="input" /></div><div><label class="label">Comissão</label><input v-model.number="edit.commission" type="number" step="0.01" class="input" /></div></div>
+        <div><label class="label">Endosso</label><input v-model="edit.endorsement_number" class="input" /></div><div><label class="label">Prêmio</label><MoneyInput v-model="edit.premium" class="input" /></div>
+        <div><label class="label">% seguradora</label><MoneyInput v-model="edit.commission_percent" class="input" /></div><div><label class="label">Comissão</label><MoneyInput v-model="edit.commission" class="input" /></div></div>
       <p class="mt-2 text-xs text-mute">Os valores originais extraídos continuam guardados para auditoria.</p>
       <div class="mt-3 flex justify-end gap-2"><button class="btn" @click="edit.open = false">Cancelar</button><button class="btn btn-primary" @click="saveEdit">Salvar correção</button></div>
     </ModalBox>

@@ -6,7 +6,7 @@ import { supabase, fail } from '@/services/supabase'
 import { useData } from '@/stores/data'
 import { sendSaleEmail } from '@/services/mail'
 import { run } from '@/composables/useToast'
-import { brl, dateBR, todayISO } from '@/utils/format'
+import { brl, dateBR, todayISO, formatCpf, maskCpf, onlyDigits } from '@/utils/format'
 import { calcSale } from '@/utils/finance'
 import PageHeader from '@/components/PageHeader.vue'
 import ModalBox from '@/components/ModalBox.vue'
@@ -95,7 +95,7 @@ async function save() {
     else {
       let cid = existing.value?.id
       if (!cid) {
-        const c = await supabase.from('clients').insert({ full_name: cl.name.trim(), cpf: cl.cpf.trim() || null, phone: cl.phone.trim() || null, email: cl.email.trim() || null, cep: cl.cep.replace(/\D/g, '') || null, street: cl.street || null, neighborhood: cl.neighborhood || null, city: cl.city || null, state: cl.state || null }).select('id').single()
+        const c = await supabase.from('clients').insert({ full_name: cl.name.trim(), cpf: onlyDigits(cl.cpf) || null, phone: cl.phone.trim() || null, email: cl.email.trim() || null, cep: cl.cep.replace(/\D/g, '') || null, street: cl.street || null, neighborhood: cl.neighborhood || null, city: cl.city || null, state: cl.state || null }).select('id').single()
         fail(c.error); cid = c.data!.id
       }
       const r = await supabase.from('sales').insert({ ...row, client_id: cid }).select('id').single()
@@ -125,9 +125,10 @@ async function save() {
         <tr v-for="s in list" :key="s.id">
           <td>{{ dateBR(s.sale_date) }}</td>
           <td><button class="text-left font-medium hover:text-gold" @click="router.push('/vendas/' + s.id)">{{ s.clients?.full_name }}</button>
-            <div class="flex flex-wrap items-center gap-x-3 text-xs text-mute"><span v-if="s.plate">{{ s.plate }}</span>
-              <span v-if="s.proposal_number" class="inline-flex items-center gap-0.5">prop. {{ s.proposal_number }}<CopyBtn :text="s.proposal_number" label="Copiar proposta" /></span>
-              <span v-if="s.policy_number" class="inline-flex items-center gap-0.5">apólice {{ s.policy_number }}<CopyBtn :text="s.policy_number" label="Copiar apólice" /></span></div></td>
+            <div class="space-y-0.5 text-xs text-mute">
+              <div v-if="s.plate">{{ s.plate }}</div>
+              <div v-if="s.clients?.cpf" class="flex items-center gap-0.5">CPF {{ formatCpf(s.clients.cpf) }}<CopyBtn :text="formatCpf(s.clients.cpf)" label="Copiar CPF" /></div>
+              <div v-if="s.policy_number" class="flex items-center gap-0.5">apólice {{ s.policy_number }}<CopyBtn :text="s.policy_number" label="Copiar apólice" /></div></div></td>
           <td>{{ s.products?.name }}</td><td><StatusBadge :value="s.origin" /></td>
           <td class="num text-right">{{ brl(s.premium) }}</td><td class="num text-right">{{ brl(s.gross_commission) }}</td>
           <td class="num text-right">{{ brl(s.net_commission) }}</td><td><StatusBadge :value="s.status" /></td>
@@ -147,7 +148,7 @@ async function save() {
         </ul>
         <p v-if="!isEdit && cl.name.trim()" class="mt-1 text-xs" :class="existing ? 'text-pos' : 'text-mute'">{{ existing ? 'Cliente já cadastrado.' : 'Cliente novo: será cadastrado junto com a venda.' }}</p></div>
       <template v-if="!isEdit && cl.name.trim() && !existing">
-        <div><label class="label" for="cc">CPF</label><input id="cc" v-model="cl.cpf" class="input" inputmode="numeric" /></div>
+        <div><label class="label" for="cc">CPF</label><input id="cc" v-model="cl.cpf" class="input" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" @input="cl.cpf = maskCpf(cl.cpf)" /></div>
         <div><label class="label" for="ct">Telefone</label><input id="ct" v-model="cl.phone" class="input" inputmode="tel" /></div>
         <div class="sm:col-span-2"><label class="label" for="ce">E-mail</label><input id="ce" v-model="cl.email" type="email" class="input" /></div>
         <div><label class="label" for="cp">CEP</label><input id="cp" v-model="cl.cep" class="input" inputmode="numeric" maxlength="9" placeholder="00000-000" @input="cepField.onInput" /></div>
@@ -162,9 +163,9 @@ async function save() {
       <div v-if="isEdit && f.status === 'emitida'"><label class="label" for="ap">Nº da apólice</label><input id="ap" v-model="f.policy_number" class="input" /></div>
       <div><label class="label">Produto</label><USelect v-model="f.product_id" class="input"><option value="">Selecione</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect></div>
       <div><label class="label">Seguradora</label><USelect v-model="f.insurer_id" class="input"><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect></div>
-      <div><label class="label" for="pm">Prêmio (R$)</label><input id="pm" v-model.number="f.premium" type="number" step="0.01" min="0" class="input" /></div>
-      <div><label class="label" for="ip2">Comissão da seguradora (%)</label><input id="ip2" v-model.number="f.insurer_percent" type="number" step="0.01" class="input" /></div>
-      <div><label class="label" for="bp">Percentual do corretor (%)</label><input id="bp" v-model.number="f.broker_percent" type="number" class="input" :disabled="isEdit" />
+      <div><label class="label" for="pm">Prêmio (R$)</label><MoneyInput id="pm" v-model="f.premium" class="input" /></div>
+      <div><label class="label" for="ip2">Comissão da seguradora (%)</label><MoneyInput id="ip2" v-model="f.insurer_percent" class="input" /></div>
+      <div><label class="label" for="bp">Percentual do corretor (%)</label><MoneyInput id="bp" v-model="f.broker_percent" class="input" :disabled="isEdit" />
         <p v-if="isEdit" class="mt-1 text-xs text-mute">Fixo desde o cadastro da venda.</p></div>
       <div><label class="label">Origem</label><USelect v-model="f.origin" class="input"><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect></div>
       <div class="sm:col-span-2"><label class="label" for="ob">Observações</label><textarea id="ob" v-model="f.notes" class="input" rows="2" /></div>

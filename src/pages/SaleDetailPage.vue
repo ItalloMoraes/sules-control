@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { supabase, fail } from '@/services/supabase'
 import { useData } from '@/stores/data'
 import { notify, run } from '@/composables/useToast'
-import { brl, dateBR, todayISO, pct } from '@/utils/format'
+import { brl, dateBR, todayISO, pct, formatCpf, maskCpf, onlyDigits } from '@/utils/format'
 import { proposalUrl } from '@/services/proposals'
 import { useCepField } from '@/composables/useCepField'
 import PageHeader from '@/components/PageHeader.vue'
@@ -16,6 +16,13 @@ const data = useData(), route = useRoute(), router = useRouter()
 const id = computed(() => route.params.id as string)
 const sale = computed(() => data.sales.find(s => s.id === id.value))
 const client = computed(() => data.clients.find(c => c.id === sale.value?.client_id))
+const clientFields = computed<[string, string][]>(() => {
+  const c = client.value
+  if (!c) return []
+  const rows: [string, string | null | undefined][] = [['Nome', c.full_name], ['CPF', c.cpf ? formatCpf(c.cpf) : ''], ['Telefone', c.phone], ['E-mail', c.email],
+    ['CEP', c.cep ? c.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2') : ''], ['Cidade', c.city ? `${c.city}/${c.state}` : ''], ['Endereço', [c.street, c.neighborhood].filter(Boolean).join(' · ')]]
+  return rows.filter((r): r is [string, string] => !!r[1])
+})
 const canc = computed(() => data.cancellations.find(c => c.sale_id === id.value))
 
 const pdf = reactive({ open: false, url: '' })
@@ -53,13 +60,13 @@ const cepEd = useCepField(ed)
 function openClient() {
   const c = client.value
   if (!c) return
-  Object.assign(ed, { open: true, full_name: c.full_name, cpf: c.cpf ?? '', phone: c.phone ?? '', email: c.email ?? '', cep: c.cep ?? '', street: c.street ?? '', neighborhood: c.neighborhood ?? '', city: c.city ?? '', state: c.state ?? '' })
+  Object.assign(ed, { open: true, full_name: c.full_name, cpf: maskCpf(c.cpf), phone: c.phone ?? '', email: c.email ?? '', cep: c.cep ?? '', street: c.street ?? '', neighborhood: c.neighborhood ?? '', city: c.city ?? '', state: c.state ?? '' })
   cepEd.refresh()
 }
 async function saveClient() {
   if (!client.value || !ed.full_name.trim()) return alert('Informe o nome do cliente.')
   if (await run(async () => {
-    fail((await supabase.from('clients').update({ full_name: ed.full_name.trim(), cpf: ed.cpf.trim() || null, phone: ed.phone.trim() || null, email: ed.email.trim() || null, cep: ed.cep.replace(/\D/g, '') || null, street: ed.street || null, neighborhood: ed.neighborhood || null, city: ed.city || null, state: ed.state || null }).eq('id', client.value!.id)).error)
+    fail((await supabase.from('clients').update({ full_name: ed.full_name.trim(), cpf: onlyDigits(ed.cpf) || null, phone: ed.phone.trim() || null, email: ed.email.trim() || null, cep: ed.cep.replace(/\D/g, '') || null, street: ed.street || null, neighborhood: ed.neighborhood || null, city: ed.city || null, state: ed.state || null }).eq('id', client.value!.id)).error)
     await data.refresh()
   }, 'Cliente atualizado')) ed.open = false
 }
@@ -77,14 +84,27 @@ async function saveClient() {
       <div class="card"><div class="text-xs text-mute">Bruta ({{ pct(sale.insurer_percent, 2) }})</div><div class="num font-bold">{{ brl(sale.gross_commission) }}</div></div>
       <div class="card"><div class="text-xs text-mute">Líquida ({{ pct(sale.broker_percent, 2) }})</div><div class="num font-bold text-gold">{{ brl(sale.net_commission) }}</div></div>
     </div>
-    <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1"><StatusBadge :value="sale.status" /><StatusBadge :value="sale.origin" />
-      <span class="inline-flex items-center gap-0.5 text-sm text-mute">Proposta {{ sale.proposal_number ?? '—' }}<CopyBtn v-if="sale.proposal_number" :text="sale.proposal_number" label="Copiar proposta" /></span>
-      <span class="inline-flex items-center gap-0.5 text-sm text-mute">Apólice {{ sale.policy_number ?? '—' }}<CopyBtn v-if="sale.policy_number" :text="sale.policy_number" label="Copiar apólice" /></span>
-      <span class="inline-flex items-center gap-0.5 text-sm text-mute">Placa {{ sale.plate ?? '—' }}</span>
-      <span v-if="client?.cpf" class="inline-flex items-center gap-0.5 text-sm text-mute">CPF {{ client.cpf }}<CopyBtn :text="client.cpf" label="Copiar CPF" /></span>
-      <span v-if="client?.phone" class="inline-flex items-center gap-0.5 text-sm text-mute">{{ client.phone }}<CopyBtn :text="client.phone" label="Copiar telefone" /></span>
-      <span v-if="client?.city" class="inline-flex items-center gap-0.5 text-sm text-mute">{{ client.city }}/{{ client.state }}</span>
-      <span v-if="client?.email" class="inline-flex items-center gap-0.5 text-sm text-mute">{{ client.email }}<CopyBtn :text="client.email" label="Copiar e-mail" /></span></div>
+    <div class="mb-4 grid gap-4 lg:grid-cols-2">
+      <div v-reveal class="card">
+        <h2 class="mb-3 font-bold">Dados do cliente</h2>
+        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <div v-for="[label, value] in clientFields" :key="label" class="min-w-0">
+            <dt class="text-xs text-mute">{{ label }}</dt>
+            <dd class="flex items-center gap-1 break-words text-base font-semibold">{{ value }}<CopyBtn :text="value" :label="`Copiar ${label.toLowerCase()}`" /></dd>
+          </div>
+        </dl>
+      </div>
+      <div v-reveal class="card">
+        <h2 class="mb-3 font-bold">Dados da venda</h2>
+        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <div><dt class="text-xs text-mute">Proposta</dt><dd class="flex items-center gap-1 text-base font-semibold">{{ sale.proposal_number ?? '—' }}<CopyBtn v-if="sale.proposal_number" :text="sale.proposal_number" label="Copiar proposta" /></dd></div>
+          <div><dt class="text-xs text-mute">Apólice</dt><dd class="flex items-center gap-1 text-base font-semibold">{{ sale.policy_number ?? '—' }}<CopyBtn v-if="sale.policy_number" :text="sale.policy_number" label="Copiar apólice" /></dd></div>
+          <div><dt class="text-xs text-mute">Placa</dt><dd class="flex items-center gap-1 text-base font-semibold">{{ sale.plate ?? '—' }}<CopyBtn v-if="sale.plate" :text="sale.plate" label="Copiar placa" /></dd></div>
+          <div><dt class="text-xs text-mute">Status</dt><dd class="mt-0.5"><StatusBadge :value="sale.status" /></dd></div>
+          <div><dt class="text-xs text-mute">Origem</dt><dd class="mt-0.5"><StatusBadge :value="sale.origin" /></dd></div>
+        </dl>
+      </div>
+    </div>
 
     <div v-if="canc" class="card mb-4 border-neg/50">
       <h2 class="font-bold">Cancelada em {{ dateBR(canc.cancelled_at) }}</h2>
@@ -108,7 +128,7 @@ async function saveClient() {
     <ModalBox :open="ed.open" title="Editar cliente" @close="ed.open = false">
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="sm:col-span-2"><label class="label" for="en">Nome</label><input id="en" v-model="ed.full_name" class="input" /></div>
-        <div><label class="label" for="ec">CPF</label><input id="ec" v-model="ed.cpf" class="input" inputmode="numeric" /></div>
+        <div><label class="label" for="ec">CPF</label><input id="ec" v-model="ed.cpf" class="input" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" @input="ed.cpf = maskCpf(ed.cpf)" /></div>
         <div><label class="label" for="et">Telefone</label><input id="et" v-model="ed.phone" class="input" inputmode="tel" /></div>
         <div class="sm:col-span-2"><label class="label" for="ee">E-mail</label><input id="ee" v-model="ed.email" type="email" class="input" /></div>
         <div><label class="label" for="ecp">CEP</label><input id="ecp" v-model="ed.cep" class="input" inputmode="numeric" maxlength="9" placeholder="00000-000" @input="cepEd.onInput" /></div>

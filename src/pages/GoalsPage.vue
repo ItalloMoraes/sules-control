@@ -47,9 +47,9 @@ async function save() {
   </PageHeader>
   <div class="card mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
     <div><label class="label">Qtd. de seguros</label><input v-model.number="g.target_count" type="number" class="input" /></div>
-    <div><label class="label">Prêmios (R$)</label><input v-model.number="g.target_premium" type="number" class="input" /></div>
-    <div><label class="label">Comissão bruta (R$)</label><input v-model.number="g.target_gross" type="number" class="input" /></div>
-    <div><label class="label">Comissão líquida (R$)</label><input v-model.number="g.target_net" type="number" class="input" /></div>
+    <div><label class="label">Prêmios (R$)</label><MoneyInput v-model="g.target_premium" class="input" /></div>
+    <div><label class="label">Comissão bruta (R$)</label><MoneyInput v-model="g.target_gross" class="input" /></div>
+    <div><label class="label">Comissão líquida (R$)</label><MoneyInput v-model="g.target_net" class="input" /></div>
     <div><label class="label">Meta líquida mede</label><USelect v-model="g.net_basis" class="input"><option value="generated">Gerada originalmente</option><option value="after_reversals">Após estornos efetivados</option></USelect></div>
     <div class="sm:col-span-2 lg:col-span-5"><button class="btn btn-primary" @click="save">Salvar metas</button></div>
   </div>
