@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import type { ChartConfiguration } from 'chart.js'
 import { supabase, fail } from '@/services/supabase'
 import { useAuth } from '@/stores/auth'
+import { useData } from '@/stores/data'
 import { run } from '@/composables/useToast'
 import { monthLabel } from '@/utils/format'
 import PageHeader from '@/components/PageHeader.vue'
@@ -11,7 +12,14 @@ import BaseChart from '@/components/BaseChart.vue'
 // Somente registro: os números vêm do seu CRM e são guardados como estão (sem cálculo de funil).
 type Row = { id: string; reference_month: string; leads_received: number; sales_converted: number }
 type In = Omit<Row, 'id'>
-const auth = useAuth()
+const auth = useAuth(), data = useData()
+const goal = ref(10)
+watchEffect(() => { goal.value = data.leadGoal })
+const saveGoal = () => run(async () => {
+  if (!(goal.value > 0)) throw new Error('Informe uma meta maior que zero.')
+  fail((await supabase.from('settings').update({ lead_conversion_goal: goal.value }).eq('user_id', auth.session!.user.id)).error)
+  await data.refresh()
+}, 'Meta de conversão salva')
 const rows = ref<Row[]>([])
 const f = ref({ month: new Date().toISOString().slice(0, 7), leads: 0, sales: 0 }), paste = ref('')
 
@@ -53,6 +61,11 @@ onMounted(() => load().catch(e => run(() => Promise.reject(e), '')))
 </script>
 <template>
   <PageHeader title="Conversão de leads" sub="Registro mensal dos números do seu CRM: leads recebidos e vendas convertidas." />
+  <div v-reveal class="card mb-4 flex flex-wrap items-end gap-3">
+    <div><label class="label" for="mg">Meta de conversão (%)</label><MoneyInput id="mg" v-model="goal" class="input w-32" /></div>
+    <button class="btn btn-primary" @click="saveGoal">Salvar meta</button>
+    <p class="min-w-64 flex-1 text-xs text-mute">No dashboard, a faixa muda conforme a meta: ruim abaixo de 50% dela, moderado até 75%, bom até 100% e ótimo a partir da meta.</p>
+  </div>
   <div v-reveal class="card mb-4"><BaseChart v-if="rows.length" :config="chart" /><p v-else class="py-8 text-center text-sm text-mute">Nenhum mês registrado ainda.</p></div>
   <div class="mb-4 grid gap-4 md:grid-cols-2">
     <form v-reveal class="card grid grid-cols-3 gap-2" @submit.prevent="saveOne">

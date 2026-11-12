@@ -20,10 +20,9 @@ const route = useRoute()
 const collapsed = ref(localStorage.getItem('sc-nav') === '1')
 function toggleNav() { collapsed.value = !collapsed.value; localStorage.setItem('sc-nav', collapsed.value ? '1' : '0') }
 const nav = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard' }, { to: '/vendas', label: 'Vendas e cancelamentos', icon: 'sales' },
-  { to: '/comissoes', label: 'Comissões', icon: 'commissions' },  { to: '/calendario', label: 'Calendário', icon: 'calendar' },
-  { to: '/notas', label: 'Notas e mensagens', icon: 'notes' }, { to: '/metas', label: 'Metas e conversão', icon: 'goals' },
-  { to: '/projecoes', label: 'Projeções e comparativos', icon: 'forecast' }, { to: '/relatorios', label: 'Relatórios e conferência', icon: 'reports' },
+  { to: '/', label: 'Dashboard', icon: 'dashboard' }, { to: '/vendas', label: 'Vendas', icon: 'sales' },
+  { to: '/comissoes', label: 'Comissões', icon: 'commissions' }, { to: '/notas', label: 'Notas e mensagens', icon: 'notes' },
+  { to: '/desempenho', label: 'Desempenho', icon: 'goals' }, { to: '/relatorios', label: 'Relatórios e conferência', icon: 'reports' },
 ]
 const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.startsWith(to) || (to === '/relatorios' && route.path.startsWith('/conferencia')))
 onMounted(() => run(() => data.refresh(), 'Dados carregados').catch(() => {}))

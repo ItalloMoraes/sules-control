@@ -73,6 +73,7 @@ const sections = computed(() => [
   ['Por produto', group(active.value, s => s.products?.name ?? '')],
   ['Por origem', group(active.value, s => (s.origin === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria'))],
   ['Por seguradora', group(active.value, s => s.insurers?.name ?? '')],
+  ['Por estado', group(active.value, s => clientOf.value.get(s.client_id)?.state ?? 'Sem CEP')],
   ['Por cidade', group(active.value, s => { const c = clientOf.value.get(s.client_id); return c?.city ? `${c.city}/${c.state}` : 'Sem CEP' })],
 ] as const)
 const byClient = computed(() => group(active.value, s => s.clients?.full_name ?? '').slice(0, 10))

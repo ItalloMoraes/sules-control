@@ -38,6 +38,7 @@ function move(n: number) {
   cursor.value = view.value === 'mes' ? addMonths(cursor.value, n).slice(0, 8) + '01' : iso(new Date(c.getTime() + n * (view.value === 'semana' ? 7 : 1) * 864e5))
 }
 const title = computed(() => parse(cursor.value).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }))
+const monthHolidays = computed(() => Object.entries(data.holidayNames).filter(([d]) => d.startsWith(cursor.value.slice(0, 7))).sort((a, b) => a[0].localeCompare(b[0])))
 const daySales = computed(() => byDay.value.get(selected.value) ?? [])
 </script>
 <template>
@@ -53,13 +54,17 @@ const daySales = computed(() => byDay.value.get(selected.value) ?? [])
   <div class="mb-2 flex items-center gap-2"><button class="btn" @click="move(-1)" aria-label="Anterior">‹</button><span class="min-w-40 text-center font-display font-bold capitalize">{{ title }}</span><button class="btn" @click="move(1)" aria-label="Próximo">›</button><button class="btn" @click="cursor = todayISO(); selected = todayISO()">Hoje</button></div>
   <div class="grid gap-px overflow-hidden rounded-lg border border-line bg-line" :class="view === 'dia' ? 'grid-cols-1' : 'grid-cols-7'">
     <div v-if="view !== 'dia'" v-for="d in ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']" :key="d" class="bg-raise p-1 text-center text-xs text-mute">{{ d }}</div>
-    <button v-for="d in days" :key="d" class="min-h-20 bg-panel p-1.5 text-left hover:bg-raise" :class="{ 'ring-2 ring-gold ring-inset': d === selected, 'opacity-40': view === 'mes' && d.slice(0,7) !== cursor.slice(0,7) }" @click="selected = d">
+    <button v-for="d in days" :key="d" class="min-h-20 bg-panel p-1.5 text-left hover:bg-raise" :class="{ '!bg-warn/10': !!data.holidayNames[d], 'ring-2 ring-gold ring-inset': d === selected, 'opacity-40': view === 'mes' && d.slice(0,7) !== cursor.slice(0,7) }" @click="selected = d">
       <div class="text-xs" :class="d === todayISO() ? 'font-bold text-gold' : 'text-mute'">{{ d.slice(8) }}</div>
+      <div v-if="data.holidayNames[d]" class="truncate text-[10px] font-semibold text-warn" :title="data.holidayNames[d]">{{ data.holidayNames[d] }}</div>
       <template v-if="stats(d).n"><div class="num text-sm font-bold">{{ stats(d).n }} <span class="text-xs font-normal text-mute">vendas</span></div>
         <div class="num hidden text-xs text-mute sm:block">{{ brl(stats(d).prem) }}</div><div class="num hidden text-xs text-gold sm:block">{{ brl(stats(d).com) }}</div>
         <div class="mt-0.5 flex gap-1 text-[10px]"><span v-if="stats(d).em" class="text-pos">{{ stats(d).em }}E</span><span v-if="stats(d).pend" class="text-warn">{{ stats(d).pend }}P</span><span v-if="stats(d).can" class="text-neg">{{ stats(d).can }}C</span></div></template>
     </button>
   </div>
+  <div v-if="monthHolidays.length" class="card mt-4"><h2 class="mb-2 font-bold">Feriados do mês</h2>
+    <ul class="grid gap-1 text-sm sm:grid-cols-2"><li v-for="[d, n] in monthHolidays" :key="d" class="flex justify-between gap-2"><span class="text-warn">{{ dateBR(d) }}</span><span class="truncate">{{ n }}</span></li></ul>
+    <p class="mt-2 text-xs text-mute">Feriados nacionais e os cadastrados em Configurações. Eles ficam de fora dos dias úteis da projeção.</p></div>
   <div class="card mt-4 overflow-x-auto"><h2 class="mb-2 font-bold">{{ dateBR(selected) }}</h2>
     <div class="tbl-scroll"><table class="tbl"><thead><tr><th>Cliente</th><th>Produto</th><th class="text-right">Prêmio</th><th class="text-right">Comissão</th><th>Status</th></tr></thead>
       <tbody><tr v-for="s in daySales" :key="s.id" class="cursor-pointer" @click="router.push('/vendas/' + s.id)"><td>{{ s.clients?.full_name }}</td><td>{{ s.products?.name }}</td>

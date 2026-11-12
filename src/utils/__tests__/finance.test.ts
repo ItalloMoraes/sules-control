@@ -80,3 +80,11 @@ test('CPF formatado e valores no padrão brasileiro', () => {
   assert.equal(parseBRL('12.5'), 12.5)
   assert.equal(parseBRL(''), 0)
 })
+
+import { nationalHolidayNames } from '../holidays.ts'
+test('nomes dos feriados nacionais', () => {
+  const n = nationalHolidayNames(2026)
+  assert.equal(n['2026-11-20'], 'Consciência Negra')
+  assert.equal(n['2026-04-03'], 'Sexta-feira Santa')
+  assert.equal(Object.keys(n).length, 10)
+})

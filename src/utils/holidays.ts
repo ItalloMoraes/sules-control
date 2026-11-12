@@ -9,11 +9,17 @@ function easter(year: number): [number, number] {
   const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451)
   return [Math.floor((h + l - 7 * m + 114) / 31), ((h + l - 7 * m + 114) % 31) + 1]
 }
-export function nationalHolidays(year: number): string[] {
+/** data -> nome do feriado */
+export function nationalHolidayNames(year: number): Record<string, string> {
   const iso = (m: number, d: number) => `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
   const [em, ed] = easter(year)
-  const goodFriday = new Date(Date.UTC(year, em - 1, ed - 2)).toISOString().slice(0, 10)
-  const days = [iso(1, 1), goodFriday, iso(4, 21), iso(5, 1), iso(9, 7), iso(10, 12), iso(11, 2), iso(11, 15), iso(12, 25)]
-  if (year >= 2024) days.push(iso(11, 20))
-  return days.sort()
+  const out: Record<string, string> = {
+    [iso(1, 1)]: 'Confraternização Universal',
+    [new Date(Date.UTC(year, em - 1, ed - 2)).toISOString().slice(0, 10)]: 'Sexta-feira Santa',
+    [iso(4, 21)]: 'Tiradentes', [iso(5, 1)]: 'Dia do Trabalho', [iso(9, 7)]: 'Independência do Brasil',
+    [iso(10, 12)]: 'Nossa Senhora Aparecida', [iso(11, 2)]: 'Finados', [iso(11, 15)]: 'Proclamação da República', [iso(12, 25)]: 'Natal',
+  }
+  if (year >= 2024) out[iso(11, 20)] = 'Consciência Negra'
+  return out
 }
+export const nationalHolidays = (year: number): string[] => Object.keys(nationalHolidayNames(year)).sort()
