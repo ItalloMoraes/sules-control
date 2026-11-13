@@ -95,7 +95,7 @@ const features = [
       <div class="border-t border-current/20">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 py-5 text-xs opacity-85">
           <span>© {{ year }} Sules Control. Todos os direitos reservados.</span>
-          <nav class="flex flex-wrap gap-x-4" aria-label="Informações legais"><router-link to="/privacidade" class="hover:underline">Política de Privacidade</router-link><router-link to="/termos" class="hover:underline">Termos de Serviço</router-link><router-link to="/cookies" class="hover:underline">Aviso de cookies</router-link></nav>
+          <nav class="flex flex-wrap gap-x-4" aria-label="Informações legais"><router-link to="/privacidade" class="hover:underline">Política de Privacidade</router-link><router-link to="/termos" class="hover:underline">Termos de Serviço</router-link><router-link to="/cookies" class="hover:underline">Aviso de cookies</router-link><router-link to="/creditos" class="hover:underline">Créditos</router-link></nav>
           <span class="w-full">Suhai Seguradora e demais marcas citadas pertencem aos seus respectivos proprietários.</span>
         </div>
       </div>

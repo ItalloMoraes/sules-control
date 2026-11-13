@@ -7,6 +7,7 @@ const router = createRouter({
     { path: '/privacidade', component: () => import('@/pages/LegalPage.vue'), meta: { public: true, doc: 'privacidade' } },
     { path: '/termos', component: () => import('@/pages/LegalPage.vue'), meta: { public: true, doc: 'termos' } },
     { path: '/cookies', component: () => import('@/pages/LegalPage.vue'), meta: { public: true, doc: 'cookies' } },
+    { path: '/creditos', component: () => import('@/pages/LegalPage.vue'), meta: { public: true, doc: 'creditos' } },
     { path: '/login', component: () => import('@/pages/LoginPage.vue'), meta: { public: true } },
     {
       path: '/', component: () => import('@/layouts/AppLayout.vue'),

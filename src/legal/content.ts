@@ -1,6 +1,6 @@
 import { CONTATO, RESPONSAVEL } from '@/contact'
 
-export type Block = { h: string; p?: string[]; ul?: string[] }
+export type Block = { h: string; p?: string[]; ul?: string[]; links?: { label: string; url: string }[] }
 export const LEGAL_UPDATED = '10 de novembro de 2026'
 const quem = `${RESPONSAVEL.nome}${RESPONSAVEL.documento ? ' (' + RESPONSAVEL.documento + ')' : ''}`
 
@@ -15,6 +15,7 @@ export const DOCS: Record<string, { title: string; intro: string; blocks: Block[
         'Conta e acesso: e-mail de login, senha (guardada somente em formato protegido pelo provedor de autenticação), nome e e-mail do corretor, preferências.',
         'Dados de clientes inseridos pelo corretor: nome, CPF, telefone, e-mail, CEP e endereço (cidade, estado), placa do veículo, números de proposta e apólice, valores, observações e o PDF da proposta.',
         'Dados técnicos de segurança: endereço IP, data e hora de acesso e registros de alterações, mantidos pelos provedores e pelo sistema.',
+        'Agenda: atendimentos e recontatos marcados por você (data, hora, cliente, assunto e observações).',
         'Mensagens digitadas no assistente de chat, quando esse recurso está ativado.',
         'Não solicitamos dados pessoais sensíveis (como saúde ou biometria). Pedimos que você não os insira nos campos livres.'] },
       { h: 'Finalidades e bases legais', ul: [
@@ -61,6 +62,21 @@ export const DOCS: Record<string, { title: string; intro: string; blocks: Block[
       { h: 'Limitação de responsabilidade', p: ['Na máxima extensão permitida pela lei, não nos responsabilizamos por perdas indiretas, lucros cessantes ou decisões tomadas com base nas estimativas do sistema. Isso não exclui responsabilidades que a lei não permita limitar.'] },
       { h: 'Suspensão e encerramento', p: ['Podemos suspender ou encerrar contas em caso de violação destes termos ou de risco à segurança. Você pode pedir o encerramento da conta e a exclusão dos seus dados pelo canal de contato.'] },
       { h: 'Alterações, lei e foro', p: ['Podemos alterar estes termos, informando no sistema. Eles são regidos pelas leis do Brasil, e fica eleito o foro do domicílio do usuário para dirimir eventuais conflitos, quando a lei assim determinar, ou o foro da comarca do responsável pelo sistema nos demais casos.'] },
+    ],
+  },
+  creditos: {
+    title: 'Créditos e licenças',
+    intro: 'O Sules Control usa materiais de terceiros, listados aqui com o crédito de cada autor.',
+    blocks: [
+      { h: 'Mapa do Brasil', p: [
+        'Autor: Felipe Menegaz (usuário João Felipe C.S, Wikimedia Commons). Arquivo: "Brazil Political Map.svg", publicado em dezembro de 2007.',
+        'Licença: Creative Commons Atribuição-CompartilhaIgual 3.0 Não Adaptada (CC BY-SA 3.0).',
+        'Alterações feitas por este sistema: os contornos dos estados foram simplificados, recoloridos conforme as vendas e reposicionados com siglas. O resultado (arquivo de contornos usado no mapa do dashboard) é distribuído sob a mesma licença, CC BY-SA 3.0.'],
+        links: [{ label: 'Página do arquivo original (Wikimedia Commons)', url: 'https://commons.wikimedia.org/wiki/File:Brazil_Political_Map.svg' }, { label: 'Licença CC BY-SA 3.0', url: 'https://creativecommons.org/licenses/by-sa/3.0/deed.pt-br' }] },
+      { h: 'Fonte de letra', p: ['Inter, © The Inter Project Authors, distribuída sob a SIL Open Font License 1.1.'], links: [{ label: 'rsms.me/inter', url: 'https://rsms.me/inter/' }, { label: 'SIL OFL 1.1', url: 'https://openfontlicense.org/' }] },
+      { h: 'Ícones', p: ['Os ícones da interface são baseados na biblioteca Lucide, licença ISC.'], links: [{ label: 'lucide.dev', url: 'https://lucide.dev/' }] },
+      { h: 'Consulta de CEP', p: ['Endereços obtidos pelo serviço público ViaCEP, a partir do CEP digitado.'], links: [{ label: 'viacep.com.br', url: 'https://viacep.com.br/' }] },
+      { h: 'Software livre', p: ['O sistema é construído com bibliotecas de código aberto, como Vue, Vite, Tailwind CSS, Chart.js, Pinia, Supabase, jsPDF, pdf.js e SheetJS, cada uma sob a sua própria licença (principalmente MIT e Apache-2.0).'] },
     ],
   },
   cookies: {

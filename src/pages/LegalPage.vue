@@ -6,7 +6,7 @@ import { CONTATO } from '@/contact'
 
 const route = useRoute()
 const doc = computed(() => DOCS[route.meta.doc as string] ?? DOCS.privacidade)
-const links = [['/privacidade', 'Política de Privacidade'], ['/termos', 'Termos de Serviço'], ['/cookies', 'Aviso de cookies']]
+const links = [['/privacidade', 'Política de Privacidade'], ['/termos', 'Termos de Serviço'], ['/cookies', 'Aviso de cookies'], ['/creditos', 'Créditos']]
 </script>
 <template>
   <div class="min-h-screen bg-ink px-4 py-8">
@@ -19,6 +19,7 @@ const links = [['/privacidade', 'Política de Privacidade'], ['/termos', 'Termos
         <h2 class="mb-1 text-lg font-semibold">{{ i + 1 }}. {{ b.h }}</h2>
         <p v-for="(t, j) in b.p ?? []" :key="j" class="mb-2 text-sm text-mute">{{ t }}</p>
         <ul v-if="b.ul" class="mb-2 list-disc space-y-1 pl-5 text-sm text-mute"><li v-for="(t, j) in b.ul" :key="j">{{ t }}</li></ul>
+        <ul v-if="b.links" class="mb-2 space-y-1 text-sm"><li v-for="l in b.links" :key="l.url"><a :href="l.url" target="_blank" rel="noopener noreferrer" class="text-gold hover:underline">{{ l.label }}</a></li></ul>
       </section>
       <p class="border-t border-line pt-4 text-sm">Dúvidas ou pedidos sobre seus dados: <a :href="`mailto:${CONTATO.email}`" class="text-gold hover:underline">{{ CONTATO.email }}</a></p>
       <nav class="mt-3 flex flex-wrap gap-4 text-sm" aria-label="Documentos legais"><router-link v-for="[to, label] in links" :key="to" :to="to" class="text-mute hover:text-gold hover:underline">{{ label }}</router-link></nav>

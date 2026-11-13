@@ -88,3 +88,11 @@ test('nomes dos feriados nacionais', () => {
   assert.equal(n['2026-04-03'], 'Sexta-feira Santa')
   assert.equal(Object.keys(n).length, 10)
 })
+
+import { BR_LABELS, BR_PATHS } from '../brazilMap.ts'
+test('mapa do Brasil tem os 27 estados com contorno e sigla', () => {
+  const ufs = Object.keys(BR_PATHS)
+  assert.equal(ufs.length, 27)
+  for (const u of ufs) { assert.ok(BR_PATHS[u].startsWith('M') && BR_PATHS[u].length > 60, u); assert.ok(BR_LABELS[u], u) }
+  assert.ok(ufs.includes('DF') && ufs.includes('SP') && ufs.includes('AM'))
+})

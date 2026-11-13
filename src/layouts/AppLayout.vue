@@ -88,6 +88,7 @@ async function out() { await auth.logout(); router.push('/login') }
           <router-link to="/privacidade" class="hover:text-gold hover:underline">Privacidade</router-link>
           <router-link to="/termos" class="hover:text-gold hover:underline">Termos</router-link>
           <router-link to="/cookies" class="hover:text-gold hover:underline">Cookies</router-link>
+          <router-link to="/creditos" class="hover:text-gold hover:underline">Créditos</router-link>
           <a :href="`mailto:${CONTATO.email}`" class="hover:text-gold hover:underline">Contato</a>
         </nav>
       </footer>

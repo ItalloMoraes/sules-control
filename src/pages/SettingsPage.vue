@@ -83,12 +83,20 @@ const customList = computed(() => [...data.holidays].sort())
       <div class="inline-flex rounded-full bg-raise p-1"><button v-for="[id, label] in THEMES" :key="id" class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
         :class="theme === id ? 'bg-panel text-text shadow-sm' : 'text-mute hover:text-text'" @click="setTheme(id)">{{ label }}</button></div>
     </div>
+    <div v-reveal class="card"><h2 class="mb-2 font-bold">Avisos do sino</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-mute">
+        <li>Apólice pendente: aviso a cada 6 horas, só das 8h às 17h, de segunda a sexta e sem feriados.</li>
+        <li>Se a hora do aviso cair fora desse horário, ele sai às 8h30 do próximo dia útil.</li>
+        <li>Agendamentos: aviso às 8h30 do dia marcado.</li>
+        <li>Você pode excluir os avisos no próprio sino.</li>
+      </ul></div>
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Dados e privacidade</h2>
       <ul class="space-y-1.5 text-sm">
         <li><router-link to="/relatorios" class="text-gold hover:underline">Backup completo dos seus dados (Relatórios)</router-link></li>
         <li><router-link to="/privacidade" class="text-gold hover:underline">Política de Privacidade</router-link></li>
         <li><router-link to="/termos" class="text-gold hover:underline">Termos de Serviço</router-link></li>
         <li><router-link to="/cookies" class="text-gold hover:underline">Aviso de cookies</router-link></li>
+        <li><router-link to="/creditos" class="text-gold hover:underline">Créditos e licenças</router-link></li>
       </ul></div>
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Seguradoras</h2>
       <ul class="mb-2 text-sm"><li v-for="i in data.insurers" :key="i.id" class="flex items-center justify-between border-b border-line/60 py-1.5"><span>{{ i.name }} <span v-if="i.is_default" class="text-gold">(padrão)</span></span><button v-if="!i.is_default" class="btn btn-danger" @click="remove('insurers', i.id, i.name)">Apagar</button></li></ul>
