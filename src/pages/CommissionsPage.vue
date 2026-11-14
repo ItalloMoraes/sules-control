@@ -8,6 +8,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import StatCard from '@/components/StatCard.vue'
 import BaseChart from '@/components/BaseChart.vue'
 import SegTabs from '@/components/SegTabs.vue'
+import StateSalesCard from '@/components/StateSalesCard.vue'
 
 const data = useData()
 type Row = typeof data.sales[number]
@@ -73,8 +74,6 @@ const sections = computed(() => [
   ['Por produto', group(active.value, s => s.products?.name ?? '')],
   ['Por origem', group(active.value, s => (s.origin === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria'))],
   ['Por seguradora', group(active.value, s => s.insurers?.name ?? '')],
-  ['Por estado', group(active.value, s => clientOf.value.get(s.client_id)?.state ?? 'Sem CEP')],
-  ['Por cidade', group(active.value, s => { const c = clientOf.value.get(s.client_id); return c?.city ? `${c.city}/${c.state}` : 'Sem CEP' })],
 ] as const)
 const byClient = computed(() => group(active.value, s => s.clients?.full_name ?? '').slice(0, 10))
 const byMonth = computed(() => {
@@ -141,6 +140,8 @@ const weekChart = computed<ChartConfiguration>(() => ({ type: 'bar', data: { lab
     <div class="tbl-scroll"><table class="tbl"><thead><tr><th>Mês</th><th class="text-right">Vendas</th><th class="text-right">Canceladas</th><th class="text-right">Prêmio</th><th class="text-right">Bruta</th><th class="text-right">Líquida</th><th class="text-right">Líquida média</th></tr></thead>
       <tbody><tr v-for="r in byMonth" :key="r.key"><td>{{ monthLabel(r.key + '-01') }}</td><td class="num text-right">{{ r.count }}</td><td class="num text-right">{{ r.canceled }}</td>
         <td class="num text-right">{{ brl(r.premium) }}</td><td class="num text-right">{{ brl(r.gross) }}</td><td class="num text-right font-semibold text-gold">{{ brl(r.net) }}</td><td class="num text-right">{{ brl(r.count ? r.net / r.count : 0) }}</td></tr></tbody></table></div></div>
+
+  <StateSalesCard :sales="active" class="mb-4" />
 
   <div class="mb-4 grid gap-4 lg:grid-cols-2">
     <div v-for="[title, list] in sections" :key="title" v-reveal class="card overflow-x-auto p-0">

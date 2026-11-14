@@ -88,7 +88,6 @@ onMounted(() => {
 <template>
   <PageHeader title="Calendário" sub="Vendas, feriados e a agenda de atendimentos e recontatos.">
     <button class="btn btn-primary" @click="newAppt()">Agendar</button>
-    <div class="flex gap-1"><button v-for="v in (['mes','semana','dia'] as const)" :key="v" class="btn" :class="{ 'btn-primary': view === v }" @click="view = v">{{ v === 'mes' ? 'Mensal' : v === 'semana' ? 'Semanal' : 'Diária' }}</button></div>
   </PageHeader>
   <div class="card mb-3 grid gap-2 sm:grid-cols-4">
     <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
@@ -101,16 +100,17 @@ onMounted(() => {
     <div v-if="view !== 'dia'" v-for="d in ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']" :key="d" class="bg-raise p-1 text-center text-xs text-mute">{{ d }}</div>
     <button v-for="d in days" :key="d" class="min-h-20 bg-panel p-1.5 text-left hover:bg-raise" :class="{ '!bg-warn/10': !!data.holidayNames[d], 'ring-2 ring-gold ring-inset': d === selected, 'opacity-40': view === 'mes' && d.slice(0,7) !== cursor.slice(0,7) }" @click="selected = d">
       <div class="text-xs" :class="d === todayISO() ? 'font-bold text-gold' : 'text-mute'">{{ d.slice(8) }}</div>
-      <div v-if="data.holidayNames[d]" class="truncate text-[10px] font-semibold text-warn" :title="data.holidayNames[d]">{{ data.holidayNames[d] }}</div>
-      <div v-if="apptOpen(d)" class="truncate text-[10px] font-semibold text-gold">● {{ apptOpen(d) }} agendado(s)</div>
+      <div v-if="data.holidayNames[d]" class="truncate text-[9px] font-semibold leading-tight text-warn" :title="data.holidayNames[d]">{{ data.holidayNames[d] }}</div>
+      <div v-if="apptOpen(d)" class="truncate text-[9px] font-semibold leading-tight text-gold">● {{ apptOpen(d) }} agendado(s)</div>
       <template v-if="stats(d).n"><div class="num text-sm font-bold">{{ stats(d).n }} <span class="text-xs font-normal text-mute">vendas</span></div>
         <div class="num hidden text-xs text-mute sm:block">{{ brl(stats(d).prem) }}</div><div class="num hidden text-xs text-gold sm:block">{{ brl(stats(d).com) }}</div>
         <div class="mt-0.5 flex gap-1 text-[10px]"><span v-if="stats(d).em" class="text-pos">{{ stats(d).em }}E</span><span v-if="stats(d).pend" class="text-warn">{{ stats(d).pend }}P</span><span v-if="stats(d).can" class="text-neg">{{ stats(d).can }}C</span></div></template>
     </button>
   </div>
-  <div v-if="monthHolidays.length" class="card mt-4"><h2 class="mb-2 font-bold">Feriados do mês</h2>
-    <ul class="grid gap-1 text-sm sm:grid-cols-2"><li v-for="[d, n] in monthHolidays" :key="d" class="flex justify-between gap-2"><span class="text-warn">{{ dateBR(d) }}</span><span class="truncate">{{ n }}</span></li></ul>
-    <p class="mt-2 text-xs text-mute">Feriados nacionais e os cadastrados em Configurações. Eles ficam de fora dos dias úteis da projeção.</p></div>
+  <div v-if="monthHolidays.length" class="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+    <span class="text-mute">Feriados do mês:</span>
+    <span v-for="[d, n] in monthHolidays" :key="d" class="rounded-full bg-warn/10 px-2 py-0.5 text-warn"><b>{{ d.slice(8) }}/{{ d.slice(5, 7) }}</b> {{ n }}</span>
+  </div>
   <div class="card mt-4">
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold">Agenda de {{ dateBR(selected) }}</h2><button class="btn" @click="newAppt()">Agendar neste dia</button></div>
     <ul class="divide-y divide-line/60">

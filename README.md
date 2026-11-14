@@ -15,7 +15,7 @@ Sistema web para corretores de seguro auto: vendas, emissão de apólices, comis
 - **Mapa de vendas por estado** no dashboard (mapa do Brasil com os contornos dos estados; quanto mais vendas, mais verde), com as cidades e a comissão de cada estado.
 - **Desempenho:** projeção do mês, conversão de leads (com meta editável) e metas num só painel.
 - **Agenda** no calendário (atendimentos e recontatos, com aviso às 8h30) e avisos de apólice pendente a cada 6 horas, apenas em horário comercial.
-- **Notificações** de apólices pendentes (a cada 5 horas), **notas e mensagens prontas**, **registro de conversão de leads** e **assistente de chat**.
+- **Notificações** de apólices pendentes (a cada 5 horas), **registro de conversão de leads** e **assistente de chat**.
 - **E-mail automático** com os dados da venda para um destinatário configurável.
 
 ## Tecnologias

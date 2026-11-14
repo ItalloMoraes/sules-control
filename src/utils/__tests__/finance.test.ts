@@ -96,3 +96,12 @@ test('mapa do Brasil tem os 27 estados com contorno e sigla', () => {
   for (const u of ufs) { assert.ok(BR_PATHS[u].startsWith('M') && BR_PATHS[u].length > 60, u); assert.ok(BR_LABELS[u], u) }
   assert.ok(ufs.includes('DF') && ufs.includes('SP') && ufs.includes('AM'))
 })
+
+import { leadMood } from '../leadMood.ts'
+test('memoji da conversão: deslike abaixo da metade da meta, triste até a meta, joinha na meta', () => {
+  assert.equal(leadMood(3, 10).key, 'dislike')
+  assert.equal(leadMood(5, 10).key, 'sad')
+  assert.equal(leadMood(9.9, 10).key, 'sad')
+  assert.equal(leadMood(10, 10).key, 'like')
+  assert.equal(leadMood(14, 10).key, 'like')
+})

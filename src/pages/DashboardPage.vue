@@ -4,8 +4,9 @@ import { useRouter } from 'vue-router'
 import { useData } from '@/stores/data'
 import { brl, dateBR, monthEnd, monthLabel, monthStart, todayISO } from '@/utils/format'
 import { supabase } from '@/services/supabase'
-import { STATE_NAMES } from '@/services/cep'
-import BrazilMap from '@/components/BrazilMap.vue'
+import StateSalesCard from '@/components/StateSalesCard.vue'
+import LeadGauge from '@/components/LeadGauge.vue'
+import { leadMood } from '@/utils/leadMood'
 import SegTabs from '@/components/SegTabs.vue'
 import { project } from '@/utils/projections'
 import { monthKeys, monthPeriod, round2, summarize, type Period } from '@/utils/finance'
@@ -47,45 +48,23 @@ onMounted(async () => {
 const leadPct = computed(() => lead.value && lead.value.leads_received ? Math.min(100, Math.round((lead.value.sales_converted / lead.value.leads_received) * 1000) / 10) : 0)
 // vendas ativas do período, por estado e cidade do cliente (pelo CEP)
 const geoSales = computed(() => data.sales.filter(s => s.status !== 'cancelada' && (!f.from || s.sale_date >= f.from) && (!f.to || s.sale_date <= f.to)))
-const geo = computed(() => {
-  const byUf = new Map<string, { count: number; net: number; cities: Map<string, { count: number; net: number }> }>()
-  let none = 0
-  for (const s of geoSales.value) {
-    const c = data.clients.find(x => x.id === s.client_id)
-    if (!c?.state) { none++; continue }
-    const e = byUf.get(c.state) ?? { count: 0, net: 0, cities: new Map() }
-    e.count++; e.net += s.net_commission
-    const k = c.city || 'Cidade não informada', ci = e.cities.get(k) ?? { count: 0, net: 0 }
-    ci.count++; ci.net += s.net_commission; e.cities.set(k, ci); byUf.set(c.state, e)
-  }
-  const rows = [...byUf].map(([uf, e]) => ({ uf, count: e.count, net: round2(e.net), cities: [...e.cities].map(([name, v]) => ({ name, count: v.count, net: round2(v.net) })).sort((x, y) => y.net - x.net) }))
-    .sort((x, y) => y.count - x.count || y.net - x.net)
-  return { rows, none }
-})
-const geoCounts = computed(() => Object.fromEntries(geo.value.rows.map(r => [r.uf, r.count])))
-const geoNet = computed(() => Object.fromEntries(geo.value.rows.map(r => [r.uf, r.net])))
-const geoSel = ref('')
-const leadFill = computed(() => Math.min(100, (leadPct.value / data.leadGoal) * 100))
 const projRows = computed(() => [['Conservador', proj.value.scenarios.conservador], ['Provável', proj.value.scenarios.provavel], ['Otimista', proj.value.scenarios.otimista]] as const)
 const projMax = computed(() => Math.max(...projRows.value.map(r => r[1].net), 1))
 const C = { gold: '#1E8A44', pos: '#34C759', neg: '#FF453A', info: '#8FD6B0', warn: '#FF9F0A' }
-// faixas de conversão em relação à meta: ruim (< 50%), moderado (< 75%), bom (< 100%) e ótimo (meta atingida)
-const ZONES = [{ from: 0, len: 40, color: C.neg }, { from: 40, len: 20, color: C.warn }, { from: 60, len: 20, color: '#A3D635' }, { from: 80, len: 20, color: C.pos }]
-const leadProgress = computed(() => Math.min(100, (leadPct.value / (data.leadGoal * 1.25)) * 100))   // o anel vai até 125% da meta
-const leadBand = computed(() => {
-  const p = leadPct.value, mt = data.leadGoal
-  return p < mt * 0.5 ? { t: 'Ruim', c: C.neg } : p < mt * 0.75 ? { t: 'Moderado', c: C.warn } : p < mt ? { t: 'Bom', c: '#A3D635' } : { t: 'Ótimo', c: C.pos }
-})
+const leadState = computed(() => leadMood(leadPct.value, data.leadGoal))
 const line = (title: string, vals: number[], color: string): ChartConfiguration => ({ type: 'line', data: { labels: labels.value, datasets: [{ label: title, data: vals, borderColor: color, backgroundColor: color + '33', tension: .3, fill: true }] } })
 const charts = computed(() => ({
-  sales: line('Vendas', series.value.map(s => s.issuedCount), C.info),
+  // barras = prêmios (R$, eixo da esquerda); linha = quantidade de vendas (eixo da direita)
+  salesPremium: { type: 'bar', data: { labels: labels.value, datasets: [
+    { type: 'bar', label: 'Prêmios (R$)', data: series.value.map(s => s.premium), backgroundColor: C.pos, yAxisID: 'y', order: 2, fmt: 'brl', maxBarThickness: 34 },
+    { type: 'line', label: 'Vendas (quantidade)', data: series.value.map(s => s.issuedCount), borderColor: C.warn, yAxisID: 'y1', order: 1, fill: false }] },
+    options: { scales: { y1: {} } } } as unknown as ChartConfiguration,
   // bruta larga e clara ao fundo; líquida mais estreita, forte e na frente
   commissions: { type: 'bar', data: { labels: labels.value, datasets: [
     { label: 'Bruta', data: series.value.map(s => s.gross), backgroundColor: C.info, grouped: false, order: 2, barPercentage: 1, maxBarThickness: 46 },
     { label: 'Líquida', data: series.value.map(s => s.net), backgroundColor: C.pos, grouped: false, order: 1, barPercentage: 0.5, maxBarThickness: 22 }] } } as ChartConfiguration,
-  premium: line('Prêmios', series.value.map(s => s.premium), C.pos),
   cancel: { type: 'bar', data: { labels: labels.value, datasets: [
-    { label: 'Comissão perdida', data: series.value.map(s => s.lostCommission), backgroundColor: C.warn }] } } as ChartConfiguration,
+    { label: 'Comissão perdida (R$)', data: series.value.map(s => s.lostCommission), backgroundColor: C.warn, fmt: 'brl' }] } } as unknown as ChartConfiguration,
   origin: { type: 'doughnut', data: { labels: ['Digital Suhai', 'Venda própria'], datasets: [{ backgroundColor: [C.info, C.gold], data: ['digital_suhai', 'venda_propria'].map(o =>
     round2(data.sales.filter(s => s.origin === o && s.status !== 'cancelada' && s.sale_date >= f.from && s.sale_date <= f.to).reduce((a, s) => a + s.net_commission, 0))) }] } } as ChartConfiguration,
   product: { type: 'doughnut', data: { labels: data.products.map(p => p.name), datasets: [{ backgroundColor: [C.gold, C.info, C.pos, C.warn, C.neg], data: data.products.map(p =>
@@ -112,51 +91,29 @@ const charts = computed(() => ({
       </div>
     </div>
     <div v-reveal class="card flex items-center gap-4">
-      <svg width="84" height="84" viewBox="0 0 36 36" class="-rotate-90 shrink-0" role="img" :aria-label="`Conversão ${leadPct}%, faixa ${leadBand.t}`">
-        <g fill="none" stroke-width="3.6" pathLength="100">
-          <circle v-for="z in ZONES" :key="'t' + z.from" cx="18" cy="18" r="15.9" pathLength="100" :stroke="z.color" opacity="0.22" :stroke-dasharray="`${z.len - 1} 100`" :stroke-dashoffset="-z.from" />
-          <circle v-for="z in ZONES" :key="'p' + z.from" cx="18" cy="18" r="15.9" pathLength="100" :stroke="z.color" :stroke-dasharray="`${Math.max(0, Math.min(z.len - 1, leadProgress - z.from))} 100`" :stroke-dashoffset="-z.from" />
-        </g>
-      </svg>
+      <LeadGauge :pct="leadPct" :goal="data.leadGoal" />
       <div v-if="lead"><div class="text-xs text-mute">Conversão de leads · {{ monthLabel(lead.reference_month) }}</div>
         <div class="num font-display text-3xl font-semibold">{{ leadPct }}%<span class="ml-2 text-sm font-normal text-mute">meta {{ data.leadGoal }}%</span></div>
-        <div class="mt-0.5 inline-flex items-center gap-1.5 text-xs font-semibold"><span class="h-2.5 w-2.5 rounded-full" :style="{ background: leadBand.c }" />{{ leadBand.t }}</div>
+        <div class="mt-0.5 text-xs font-semibold" :style="{ color: leadState.color }">{{ leadState.label }}</div>
         <div class="text-xs text-mute">{{ lead.sales_converted }} vendas de {{ lead.leads_received }} leads</div></div>
       <div v-else><div class="text-xs text-mute">Conversão de leads · meta {{ data.leadGoal }}%</div><router-link to="/desempenho?tab=conversao" class="text-sm text-gold hover:underline">Registrar números</router-link></div>
     </div>
   </div>
   <SegTabs v-model="chartSpan" :tabs="[{ id: '3', label: '3 meses' }, { id: '6', label: '6 meses' }, { id: '12', label: '12 meses' }]" />
   <div class="mb-6 grid gap-4 lg:grid-cols-2">
-    <div v-reveal class="card"><h2 class="mb-2 font-bold">Evolução das vendas</h2><BaseChart :config="charts.sales" /></div>
+    <div v-reveal class="card"><h2 class="mb-2 font-bold">Vendas e prêmios por mês</h2><BaseChart :config="charts.salesPremium" /></div>
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Evolução das comissões</h2><BaseChart :config="charts.commissions" /></div>
-    <div v-reveal class="card"><h2 class="mb-2 font-bold">Prêmios por mês</h2><BaseChart :config="charts.premium" /></div>
-    <div v-reveal class="card"><h2 class="mb-2 font-bold">Cancelamentos</h2><BaseChart :config="charts.cancel" :height="160" /></div>
   </div>
-  <div class="mb-6 grid gap-4 md:grid-cols-2">
-    <div v-reveal class="card"><h2 class="mb-2 font-bold">Digital Suhai × Venda própria</h2><BaseChart :config="charts.origin" :height="230" /></div>
-    <div v-reveal class="card"><h2 class="mb-2 font-bold">Por produto</h2><BaseChart :config="charts.product" :height="230" /></div>
-  </div>
-  <div v-reveal class="card mb-6">
-    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2"><h2 class="font-bold">Vendas por estado</h2><p class="text-xs text-mute">Quanto mais verde, mais vendas no período. Clique num estado para ver as cidades.</p></div>
-    <div class="grid gap-6 lg:grid-cols-2">
-      <BrazilMap :counts="geoCounts" :commission="geoNet" v-model="geoSel" />
-      <div class="max-h-[26rem] overflow-y-auto pr-1">
-        <ul v-if="geo.rows.length" class="divide-y divide-line/60">
-          <li v-for="r in geo.rows" :key="r.uf">
-            <button type="button" class="flex w-full items-center gap-3 py-2 text-left hover:bg-raise/60" :aria-expanded="geoSel === r.uf" @click="geoSel = geoSel === r.uf ? '' : r.uf">
-              <span class="w-8 font-semibold">{{ r.uf }}</span><span class="flex-1 truncate text-sm">{{ STATE_NAMES[r.uf] }}</span>
-              <span class="num text-sm">{{ r.count }} venda(s)</span><span class="num w-28 text-right text-sm font-semibold text-gold">{{ brl(r.net) }}</span>
-            </button>
-            <ul v-if="geoSel === r.uf" class="mb-2 ml-8 space-y-1 border-l border-line pl-3 text-sm">
-              <li v-for="c in r.cities" :key="c.name" class="flex items-center justify-between gap-2"><span class="truncate">{{ c.name }}</span><span class="num shrink-0 text-mute">{{ c.count }} · <b class="text-gold">{{ brl(c.net) }}</b></span></li>
-            </ul>
-          </li>
-        </ul>
-        <p v-else class="text-sm text-mute">Cadastre o CEP dos clientes para ver o mapa.</p>
-        <p v-if="geo.none" class="mt-2 text-xs text-mute">{{ geo.none }} venda(s) de clientes sem CEP não aparecem aqui.</p>
+  <div class="mb-6 grid gap-4 lg:grid-cols-3">
+    <div v-reveal class="card lg:col-span-2">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div><h2 class="mb-1 text-sm font-bold">Digital Suhai × Venda própria</h2><BaseChart :config="charts.origin" :height="210" /></div>
+        <div><h2 class="mb-1 text-sm font-bold">Por produto</h2><BaseChart :config="charts.product" :height="210" /></div>
       </div>
     </div>
+    <div v-reveal class="card"><h2 class="mb-1 text-sm font-bold">Cancelamentos (R$)</h2><BaseChart :config="charts.cancel" :height="210" /></div>
   </div>
+  <StateSalesCard :sales="geoSales" class="mb-6" />
   <div v-reveal class="card overflow-x-auto p-0"><h2 class="p-4 pb-0 font-bold">Cadastros do período (mais recentes primeiro)</h2>
     <div class="tbl-scroll"><table class="tbl"><thead><tr><th>Cadastrada em</th><th>Data da venda</th><th>Cliente</th><th>Produto</th><th class="text-right">Prêmio</th><th class="text-right">Líquida</th><th>Status</th></tr></thead>
       <tbody><tr v-for="s in preview" :key="s.id" class="cursor-pointer" @click="router.push('/vendas/' + s.id)">

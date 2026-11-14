@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { brl } from '@/utils/format'
 import { Chart, registerables, type ChartConfiguration, type ScriptableContext } from 'chart.js'
 Chart.register(...registerables)
 
@@ -32,8 +33,9 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
   const copy = structuredClone(cfg) as ChartConfiguration
   const round = copy.type === 'doughnut' || copy.type === 'pie'
   for (const ds of copy.data.datasets as unknown as Record<string, unknown>[]) {
+    const kind = (ds.type as string | undefined) ?? copy.type
     const hex = typeof ds.backgroundColor === 'string' && /^#/.test(ds.backgroundColor) ? ds.backgroundColor : ''
-    if (copy.type === 'bar') {
+    if (kind === 'bar') {
       Object.assign(ds, { borderRadius: 8, borderSkipped: false, maxBarThickness: (ds.maxBarThickness as number | undefined) ?? 26, categoryPercentage: (ds.categoryPercentage as number | undefined) ?? 0.7, barPercentage: (ds.barPercentage as number | undefined) ?? 0.85 })
       if (hex) ds.backgroundColor = (c: ScriptableContext<'bar'>) => {   // degradê; o período mais recente fica em destaque
         const a = c.chart.chartArea
@@ -42,7 +44,7 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
         g.addColorStop(0, alpha(hex, last ? 1 : 0.8)); g.addColorStop(1, alpha(hex, last ? 0.7 : 0.4))
         return g
       }
-    } else if (copy.type === 'line') {
+    } else if (kind === 'line') {
       const base = String(ds.borderColor)
       Object.assign(ds, { tension: 0.4, borderWidth: 2.5, pointRadius: (c: ScriptableContext<'line'>) => (c.dataIndex === c.dataset.data.length - 1 ? 4.5 : 0),
         pointHoverRadius: 5, pointBackgroundColor: base, pointBorderColor: panel, pointBorderWidth: 2, pointHoverBackgroundColor: base, pointHoverBorderColor: panel, pointHoverBorderWidth: 2,
@@ -56,6 +58,8 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
     } else if (round) Object.assign(ds, { borderWidth: 0, spacing: 4, borderRadius: 10, hoverOffset: 6 })
   }
   const tick = { color: mute, font: { family: FONT, size: 11 } }
+  const { scales: userScales, ...userOpts } = (copy.options ?? {}) as Record<string, unknown>
+  const hasY1 = !!(userScales as Record<string, unknown> | undefined)?.y1   // segundo eixo, à direita (ex.: quantidade de vendas)
   copy.options = {
     responsive: true, maintainAspectRatio: false,
     animation: { duration: 700, easing: 'easeOutQuart' },
@@ -66,14 +70,16 @@ function themed(cfg: ChartConfiguration): ChartConfiguration {
       legend: { position: round ? 'bottom' : 'top', align: round ? 'center' : 'end',
         labels: { color: mute, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16, font: { family: FONT, size: 12 }, ...(round ? { generateLabels: pctLabels(mute) } : {}) } },
       tooltip: { backgroundColor: panel, titleColor: text, bodyColor: mute, borderColor: border, borderWidth: 1, cornerRadius: 12, padding: 12, boxPadding: 6,
-        usePointStyle: true, titleFont: { family: FONT, weight: 600 }, bodyFont: { family: FONT } },
+        usePointStyle: true, titleFont: { family: FONT, weight: 600 }, bodyFont: { family: FONT },
+        callbacks: round ? undefined : { label: (c: { dataset: Record<string, unknown>; formattedValue: string; parsed: { y: number } }) => `${c.dataset.label ?? ''}: ${c.dataset.fmt === 'brl' ? brl(c.parsed.y) : c.formattedValue}` } },
     },
     scales: round ? undefined : {
       x: { grid: { display: false }, border: { display: false }, ticks: tick },
       y: { grid: { color: grid }, border: { display: false }, ticks: { ...tick, padding: 8, maxTicksLimit: 5, callback: (v: string | number) => compact(Number(v)) } },
+      ...(hasY1 ? { y1: { position: 'right', grid: { drawOnChartArea: false }, border: { display: false }, ticks: { ...tick, padding: 8, maxTicksLimit: 5, precision: 0 } } } : {}),
     },
     onClick: (_e: unknown, els: { index: number; datasetIndex: number }[]) => { if (els[0]) emit('pick', els[0].index, els[0].datasetIndex) },
-    ...(copy.options ?? {}),
+    ...userOpts,
   } as unknown as ChartConfiguration['options']
   return copy
 }

@@ -18,7 +18,7 @@ const k = computed(() => ({
 const evolution = computed<ChartConfiguration>(() => {
   const keys = monthKeys(new Date(Date.UTC(+todayISO().slice(0, 4), +todayISO().slice(5, 7) - 6, 1)).toISOString().slice(0, 7), 6)
   return { type: 'bar', data: { labels: keys.map(x => monthLabel(x + '-01')), datasets: [
-    { label: 'Cancelamentos', data: keys.map(x => data.cancellations.filter(c => c.cancelled_at.startsWith(x)).length), backgroundColor: '#FF453A' }] } }
+    { label: 'Comissão descontada (R$)', data: keys.map(x => round2(data.cancellations.filter(c => c.cancelled_at.startsWith(x)).reduce((a, c) => a + c.net_at_cancellation, 0))), backgroundColor: '#FF453A', fmt: 'brl' }] } } as unknown as ChartConfiguration
 })
 const withSale = (saleId: string) => data.sales.find(s => s.id === saleId)
 </script>
