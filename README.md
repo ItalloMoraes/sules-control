@@ -49,7 +49,7 @@ supabase/
    npm install
    ```
 2. No Supabase, crie um projeto. Em *Authentication*, desative o cadastro público de novos usuários e crie o seu usuário manualmente.
-3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql`, `005_proposals.sql`, `006_delete_sales.sql`, `007_security.sql`, `008_address.sql`, `009_lead_goal.sql` e `010_agenda.sql`.
+3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql`, `005_proposals.sql`, `006_delete_sales.sql`, `007_security.sql`, `008_address.sql`, `009_lead_goal.sql`, `010_agenda.sql` e `011_email_log.sql`.
 4. Crie o arquivo de ambiente e preencha:
    ```bash
    cp .env.example .env
@@ -92,6 +92,7 @@ supabase functions deploy send-policy-email
 
 - O Supabase bloqueia as portas SMTP 25 e 587; use a **465**.
 - Os avisos de apólice pendente são gerados por uma rotina no banco agendada com **pg_cron**. Ative a extensão em *Database → Extensions* antes de rodar `004_features.sql`. Sem ela, os avisos são gerados apenas com o sistema aberto.
+- Cada envio fica registrado na tela da venda (com botão de reenviar) e uma cópia oculta vai para a caixa que envia (`BCC_EMAIL='off'` desliga).
 - O e-mail é enviado ao **cadastrar** uma venda nova. Se falhar, a venda permanece salva.
 
 ## Testes e build

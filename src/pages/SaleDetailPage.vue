@@ -6,6 +6,7 @@ import { useData } from '@/stores/data'
 import { notify, run } from '@/composables/useToast'
 import { brl, dateBR, todayISO, pct, formatCpf, maskCpf, onlyDigits } from '@/utils/format'
 import { proposalUrl } from '@/services/proposals'
+import { sendSaleEmail } from '@/services/mail'
 import { useCepField } from '@/composables/useCepField'
 import PageHeader from '@/components/PageHeader.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
@@ -35,7 +36,15 @@ async function loadHistory() {
   const { data: rows } = await supabase.from('audit_logs').select('*').eq('record_id', id.value).order('created_at', { ascending: false }).limit(100)
   history.value = (rows ?? []) as typeof history.value
 }
-onMounted(loadHistory)
+type Mail = { id: string; to_addr: string | null; status: 'enviado' | 'erro'; error: string | null; created_at: string }
+const mails = ref<Mail[]>([]), sending = ref(false)
+async function loadMails() {
+  const { data: rows } = await supabase.from('email_log').select('*').eq('sale_id', id.value).order('created_at', { ascending: false }).limit(10)
+  mails.value = (rows ?? []) as Mail[]
+}
+async function resend() { sending.value = true; await sendSaleEmail(id.value); await loadMails(); sending.value = false }
+const when = (iso: string) => new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+onMounted(() => { loadHistory(); loadMails() })
 
 // Cancelar: a comissão da venda sai do total. Excluir: apaga a venda de vez (não vira cancelamento).
 const cancel = reactive({ open: false, cancelled_at: todayISO(), reason: '', notes: '' })
@@ -112,6 +121,17 @@ async function saveClient() {
       <p class="mt-1 text-sm">Comissão descontada do total: <b class="num text-neg">{{ brl(canc.net_at_cancellation) }}</b></p>
     </div>
 
+    <div v-reveal class="card mb-4">
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold">E-mail ao RH</h2><button class="btn" :disabled="sending" @click="resend">{{ mails.length ? 'Reenviar e-mail' : 'Enviar e-mail' }}</button></div>
+      <ul class="space-y-1 text-sm">
+        <li v-for="m in mails" :key="m.id" class="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          <span class="font-semibold" :class="m.status === 'enviado' ? 'text-pos' : 'text-neg'">{{ m.status === 'enviado' ? '✓ Enviado' : '✕ Falhou' }}</span>
+          <span class="num">{{ when(m.created_at) }}</span><span class="text-mute">para {{ m.to_addr }}</span><span v-if="m.error" class="text-xs text-neg">{{ m.error }}</span>
+        </li>
+        <li v-if="!mails.length" class="text-mute">Nenhum envio registrado para esta venda.</li>
+      </ul>
+      <p class="mt-2 text-xs text-mute">"Enviado" quer dizer que o servidor de e-mail aceitou a mensagem. Uma cópia oculta vai para a sua caixa; se o endereço do RH estiver errado, o aviso de devolução também chega lá.</p>
+    </div>
     <div class="card overflow-x-auto"><h2 class="mb-2 font-bold">Histórico de alterações</h2>
       <table class="tbl"><thead><tr><th>Quando</th><th>Registro</th><th>Campo</th><th>Antes</th><th>Depois</th><th>Justificativa</th></tr></thead>
         <tbody><tr v-for="h in history" :key="h.id"><td>{{ new Date(h.created_at).toLocaleString('pt-BR', { timeZone: 'America/Recife' }) }}</td>

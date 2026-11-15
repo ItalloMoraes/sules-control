@@ -11,10 +11,12 @@ const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;
 
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  let sb: ReturnType<typeof createClient> | null = null, saleId = '', to = ''
   try {
     const { sale_id } = await req.json()
+    saleId = sale_id
     // Usa o token do próprio usuário: o RLS garante que só venda dele é lida.
-    const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
+    sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
     const { data: allowed } = await sb.rpc('rate_limit_hit', { p_key: 'email', p_max: 60, p_window_seconds: 3600 })
     if (allowed === false) return json({ error: 'Limite de e-mails por hora atingido. Tente mais tarde.' }, 429)
@@ -23,14 +25,7 @@ Deno.serve(async req => {
     if (error || !s) return json({ error: 'Venda não encontrada' }, 404)
 
     const rows: [string, string][] = [
-      ['Cliente', s.clients?.full_name ?? '—'], ['CPF', cpfFmt(s.clients?.cpf)], ['Telefone', s.clients?.phone ?? '—'],
-      ['Seguradora', s.insurers?.name ?? '—'], ['Produto', s.products?.name ?? '—'],
-      ['Placa', s.plate ?? '—'],
-      ['Proposta', s.proposal_number ?? '—'], ['Apólice', s.policy_number ?? 'ainda não emitida'],
-      ['Data da venda', String(s.sale_date).split('-').reverse().join('/')],
-      ['Prêmio', brl(s.premium)], ['Percentual da seguradora', pct(s.insurer_percent)],
-      ['Percentual do corretor', pct(s.broker_percent)], ['Comissão líquida', brl(s.net_commission)],
-      ['Origem', s.origin === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria'], ['Status', s.status],
+      ['Cliente', s.clients?.full_name ?? '—'], ['Proposta', s.proposal_number ?? '—'], ['Comissão', pct(s.insurer_percent)],
     ]
     const text = rows.map(([k, v]) => `${k}: ${v}`).join('\n')
     const html = `<table cellpadding="6" style="font-family:sans-serif;font-size:14px;border-collapse:collapse">${
@@ -46,8 +41,18 @@ Deno.serve(async req => {
     const smtp = new SMTPClient({ connection: {
       hostname: Deno.env.get('SMTP_HOST') ?? 'smtp.titan.email', port: Number(Deno.env.get('SMTP_PORT') ?? 465), tls: true,
       auth: { username: user, password: Deno.env.get('SMTP_PASS')! } } })
-    await smtp.send({ from: user, to: Deno.env.get('RH_EMAIL')!, subject: `Nova venda: ${s.clients?.full_name ?? ''} · ${s.products?.name ?? ''}`, content: text, html, attachments })
+    to = Deno.env.get('RH_EMAIL')!
+    // Cópia oculta (BCC) para a própria caixa: prova do envio e, se o endereço do RH estiver errado, o aviso de devolução chega lá.
+    // Para desligar: secret BCC_EMAIL='off'. Para outro endereço: BCC_EMAIL='outro@email.com'.
+    const bccEnv = Deno.env.get('BCC_EMAIL')
+    const bcc = bccEnv === 'off' ? undefined : (bccEnv || user)
+    await smtp.send({ from: user, to, bcc, subject: `Nova venda: ${s.clients?.full_name ?? ''} · ${s.products?.name ?? ''}`, content: text, html, attachments })
     await smtp.close()
+    await sb.from('email_log').insert({ sale_id: saleId, to_addr: to, status: 'enviado' })
     return json({ ok: true })
-  } catch (e) { return json({ error: (e as Error).message }, 500) }
+  } catch (e) {
+    const msg = (e as Error).message
+    if (sb && saleId) await sb.from('email_log').insert({ sale_id: saleId, to_addr: to || null, status: 'erro', error: msg.slice(0, 300) })
+    return json({ error: msg }, 500)
+  }
 })
