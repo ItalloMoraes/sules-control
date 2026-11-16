@@ -41,12 +41,14 @@ Deno.serve(async req => {
     const smtp = new SMTPClient({ connection: {
       hostname: Deno.env.get('SMTP_HOST') ?? 'smtp.titan.email', port: Number(Deno.env.get('SMTP_PORT') ?? 465), tls: true,
       auth: { username: user, password: Deno.env.get('SMTP_PASS')! } } })
-    to = Deno.env.get('RH_EMAIL')!
+    // Assunto com acento no padrão que todo leitor de e-mail entende (RFC 2047, base64, em pedaços curtos).
+const encodeSubject = (s: string) => /^[\x20-\x7e]*$/.test(s) ? s : (s.match(/[\s\S]{1,12}/gu) ?? []).map(c => `=?UTF-8?B?${btoa(String.fromCharCode(...new TextEncoder().encode(c)))}?=`).join(' ')
+      to = Deno.env.get('RH_EMAIL')!
     // Cópia oculta (BCC) para a própria caixa: prova do envio e, se o endereço do RH estiver errado, o aviso de devolução chega lá.
     // Para desligar: secret BCC_EMAIL='off'. Para outro endereço: BCC_EMAIL='outro@email.com'.
     const bccEnv = Deno.env.get('BCC_EMAIL')
     const bcc = bccEnv === 'off' ? undefined : (bccEnv || user)
-    await smtp.send({ from: user, to, bcc, subject: `Nova venda: ${s.clients?.full_name ?? ''} · ${s.products?.name ?? ''}`, content: text, html, attachments })
+    await smtp.send({ from: user, to, bcc, subject: `Produtor: SUHAI - Ítallo`, content: text, html, attachments })
     await smtp.close()
     await sb.from('email_log').insert({ sale_id: saleId, to_addr: to, status: 'enviado' })
     return json({ ok: true })
