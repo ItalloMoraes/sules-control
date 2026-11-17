@@ -98,10 +98,12 @@ test('mapa do Brasil tem os 27 estados com contorno e sigla', () => {
 })
 
 import { leadMood } from '../leadMood.ts'
-test('memoji da conversão: deslike abaixo da metade da meta, triste até a meta, joinha na meta', () => {
+test('memoji da conversão: deslike, triste, quase lá e joinha conforme a meta', () => {
   assert.equal(leadMood(3, 10).key, 'dislike')
   assert.equal(leadMood(5, 10).key, 'sad')
-  assert.equal(leadMood(9.9, 10).key, 'sad')
+  assert.equal(leadMood(7.9, 10).key, 'sad')
+  assert.equal(leadMood(8, 10).key, 'almost')
+  assert.equal(leadMood(9.9, 10).key, 'almost')
   assert.equal(leadMood(10, 10).key, 'like')
   assert.equal(leadMood(14, 10).key, 'like')
 })

@@ -48,23 +48,27 @@ onMounted(async () => {
 const leadPct = computed(() => lead.value && lead.value.leads_received ? Math.min(100, Math.round((lead.value.sales_converted / lead.value.leads_received) * 1000) / 10) : 0)
 // vendas ativas do período, por estado e cidade do cliente (pelo CEP)
 const geoSales = computed(() => data.sales.filter(s => s.status !== 'cancelada' && (!f.from || s.sale_date >= f.from) && (!f.to || s.sale_date <= f.to)))
-const projRows = computed(() => [['Conservador', proj.value.scenarios.conservador], ['Provável', proj.value.scenarios.provavel], ['Otimista', proj.value.scenarios.otimista]] as const)
-const projMax = computed(() => Math.max(...projRows.value.map(r => r[1].net), 1))
+// barra da projeção: já gerado (sólido), faixa conservador-otimista (clara) e marca do provável
+const projScale = computed(() => Math.max(proj.value.scenarios.otimista.net, proj.value.generatedSoFar, 1) * 1.05)
+const projPos = (v: number) => Math.min(100, Math.max(0, (v / projScale.value) * 100))
+// números do mês mais recente e variação sobre o mês anterior, para o topo de cada gráfico
+const kpi = computed(() => {
+  const x = series.value, a = x[x.length - 1], b = x[x.length - 2]
+  const d = (v?: number, w?: number) => (w ? (v ?? 0) / w - 1 : null)
+  return { label: labels.value[labels.value.length - 1] ?? '', sales: a?.issuedCount ?? 0, salesD: d(a?.issuedCount, b?.issuedCount), premium: a?.premium ?? 0, premiumD: d(a?.premium, b?.premium), net: a?.net ?? 0, netD: d(a?.net, b?.net) }
+})
 const C = { gold: '#1E8A44', pos: '#34C759', neg: '#FF453A', info: '#8FD6B0', warn: '#FF9F0A' }
 const leadState = computed(() => leadMood(leadPct.value, data.leadGoal))
 const line = (title: string, vals: number[], color: string): ChartConfiguration => ({ type: 'line', data: { labels: labels.value, datasets: [{ label: title, data: vals, borderColor: color, backgroundColor: color + '33', tension: .3, fill: true }] } })
 const charts = computed(() => ({
-  // barras = prêmios (R$, eixo da esquerda); linha = quantidade de vendas (eixo da direita)
-  salesPremium: { type: 'bar', data: { labels: labels.value, datasets: [
-    { type: 'bar', label: 'Prêmios (R$)', data: series.value.map(s => s.premium), backgroundColor: C.pos, yAxisID: 'y', order: 2, fmt: 'brl', maxBarThickness: 34 },
-    { type: 'line', label: 'Vendas (quantidade)', data: series.value.map(s => s.issuedCount), borderColor: C.warn, yAxisID: 'y1', order: 1, fill: false }] },
-    options: { scales: { y1: {} } } } as unknown as ChartConfiguration,
+  sales: { type: 'line', data: { labels: labels.value, datasets: [{ label: 'Vendas', data: series.value.map(s => s.issuedCount), borderColor: C.warn, fill: true }] } } as ChartConfiguration,
+  premium: { type: 'bar', data: { labels: labels.value, datasets: [{ label: 'Prêmios (R$)', data: series.value.map(s => s.premium), backgroundColor: C.info, fmt: 'brl', maxBarThickness: 30 }] } } as unknown as ChartConfiguration,
   // bruta larga e clara ao fundo; líquida mais estreita, forte e na frente
   commissions: { type: 'bar', data: { labels: labels.value, datasets: [
     { label: 'Bruta', data: series.value.map(s => s.gross), backgroundColor: C.info, grouped: false, order: 2, barPercentage: 1, maxBarThickness: 46 },
     { label: 'Líquida', data: series.value.map(s => s.net), backgroundColor: C.pos, grouped: false, order: 1, barPercentage: 0.5, maxBarThickness: 22 }] } } as ChartConfiguration,
   cancel: { type: 'bar', data: { labels: labels.value, datasets: [
-    { label: 'Comissão perdida (R$)', data: series.value.map(s => s.lostCommission), backgroundColor: C.warn, fmt: 'brl' }] } } as unknown as ChartConfiguration,
+    { label: 'Comissão perdida (R$)', data: keys.value.map(k => round2(data.cancellations.filter(c => c.cancelled_at.startsWith(k)).reduce((a, c) => a + c.net_at_cancellation, 0))), backgroundColor: C.warn, fmt: 'brl' }] } } as unknown as ChartConfiguration,
   origin: { type: 'doughnut', data: { labels: ['Digital Suhai', 'Venda própria'], datasets: [{ backgroundColor: [C.info, C.gold], data: ['digital_suhai', 'venda_propria'].map(o =>
     round2(data.sales.filter(s => s.origin === o && s.status !== 'cancelada' && s.sale_date >= f.from && s.sale_date <= f.to).reduce((a, s) => a + s.net_commission, 0))) }] } } as ChartConfiguration,
   product: { type: 'doughnut', data: { labels: data.products.map(p => p.name), datasets: [{ backgroundColor: [C.gold, C.info, C.pos, C.warn, C.neg], data: data.products.map(p =>
@@ -84,10 +88,19 @@ const charts = computed(() => ({
   <div class="mb-6 grid gap-4 lg:grid-cols-3">
     <StatCard label="Comissão líquida" :value="brl(sum.net)" tone="gold" :hint="`${sum.issuedCount} vendas ativas · já sem as canceladas`" />
     <div v-reveal class="card">
-      <div class="mb-2 flex items-center justify-between"><h2 class="text-sm font-semibold">Projeção do mês</h2><router-link to="/desempenho" class="text-xs text-gold hover:underline">{{ proj.remainingBizDays }} dias úteis · ver mais</router-link></div>
-      <div v-for="[nm, sc] in projRows" :key="nm" class="mb-2 last:mb-0">
-        <div class="flex justify-between text-xs"><span class="text-mute">{{ nm }}</span><span class="num font-semibold">{{ brl(sc.net) }}</span></div>
-        <div class="mt-1 h-2 rounded-full bg-raise"><div class="h-2 rounded-full bg-gold transition-[width] duration-500" :class="nm === 'Provável' ? '' : nm === 'Otimista' ? 'opacity-70' : 'opacity-40'" :style="{ width: Math.max(4, (sc.net / projMax) * 100) + '%' }" /></div>
+      <div class="flex items-start justify-between gap-2">
+        <div><div class="text-xs text-mute">Projeção do mês · provável</div><div class="num font-display text-3xl font-semibold text-gold">{{ brl(proj.scenarios.provavel.net) }}</div></div>
+        <router-link to="/desempenho" class="text-xs text-gold hover:underline">ver mais</router-link>
+      </div>
+      <div class="relative mt-4 h-3 rounded-full bg-raise" role="img" :aria-label="`Já gerado ${brl(proj.generatedSoFar)}; projeção entre ${brl(proj.scenarios.conservador.net)} e ${brl(proj.scenarios.otimista.net)}`">
+        <div class="absolute inset-y-0 rounded-full bg-gold/25" :style="{ left: projPos(proj.scenarios.conservador.net) + '%', width: projPos(proj.scenarios.otimista.net) - projPos(proj.scenarios.conservador.net) + '%' }" />
+        <div class="absolute inset-y-0 left-0 rounded-full bg-gold transition-[width] duration-500" :style="{ width: projPos(proj.generatedSoFar) + '%' }" />
+        <div class="absolute top-1/2 h-5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-text" :style="{ left: projPos(proj.scenarios.provavel.net) + '%' }" />
+      </div>
+      <div class="num mt-2 flex justify-between text-xs text-mute"><span>Conservador <b class="text-text">{{ brl(proj.scenarios.conservador.net) }}</b></span><span>Otimista <b class="text-text">{{ brl(proj.scenarios.otimista.net) }}</b></span></div>
+      <div class="mt-3 grid grid-cols-2 gap-3 border-t border-line pt-3">
+        <div><div class="text-xs text-mute">Já gerado</div><div class="num text-sm font-semibold">{{ brl(proj.generatedSoFar) }}</div></div>
+        <div><div class="text-xs text-mute">Dias úteis restantes</div><div class="num text-sm font-semibold">{{ proj.remainingBizDays }}</div></div>
       </div>
     </div>
     <div v-reveal class="card flex items-center gap-4">
@@ -100,9 +113,28 @@ const charts = computed(() => ({
     </div>
   </div>
   <SegTabs v-model="chartSpan" :tabs="[{ id: '3', label: '3 meses' }, { id: '6', label: '6 meses' }, { id: '12', label: '12 meses' }]" />
-  <div class="mb-6 grid gap-4 lg:grid-cols-2">
-    <div v-reveal class="card"><h2 class="mb-2 font-bold">Vendas e prêmios por mês</h2><BaseChart :config="charts.salesPremium" /></div>
-    <div v-reveal class="card"><h2 class="mb-2 font-bold">Evolução das comissões</h2><BaseChart :config="charts.commissions" /></div>
+  <div class="mb-6 grid gap-4 lg:grid-cols-3">
+    <div v-reveal class="card">
+      <div class="mb-2 flex items-start justify-between gap-2">
+        <div><div class="text-xs text-mute">Vendas · {{ kpi.label }}</div><div class="num font-display text-2xl font-semibold">{{ kpi.sales }}</div></div>
+        <span v-if="kpi.salesD !== null" class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="kpi.salesD >= 0 ? 'bg-pos/10 text-pos' : 'bg-neg/10 text-neg'">{{ kpi.salesD >= 0 ? '▲' : '▼' }} {{ Math.abs(kpi.salesD * 100).toFixed(0) }}%</span>
+      </div>
+      <BaseChart :config="charts.sales" :height="190" />
+    </div>
+    <div v-reveal class="card">
+      <div class="mb-2 flex items-start justify-between gap-2">
+        <div><div class="text-xs text-mute">Prêmios · {{ kpi.label }}</div><div class="num font-display text-2xl font-semibold">{{ brl(kpi.premium) }}</div></div>
+        <span v-if="kpi.premiumD !== null" class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="kpi.premiumD >= 0 ? 'bg-pos/10 text-pos' : 'bg-neg/10 text-neg'">{{ kpi.premiumD >= 0 ? '▲' : '▼' }} {{ Math.abs(kpi.premiumD * 100).toFixed(0) }}%</span>
+      </div>
+      <BaseChart :config="charts.premium" :height="190" />
+    </div>
+    <div v-reveal class="card">
+      <div class="mb-2 flex items-start justify-between gap-2">
+        <div><div class="text-xs text-mute">Comissão líquida · {{ kpi.label }}</div><div class="num font-display text-2xl font-semibold">{{ brl(kpi.net) }}</div></div>
+        <span v-if="kpi.netD !== null" class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="kpi.netD >= 0 ? 'bg-pos/10 text-pos' : 'bg-neg/10 text-neg'">{{ kpi.netD >= 0 ? '▲' : '▼' }} {{ Math.abs(kpi.netD * 100).toFixed(0) }}%</span>
+      </div>
+      <BaseChart :config="charts.commissions" :height="190" />
+    </div>
   </div>
   <div class="mb-6 grid gap-4 lg:grid-cols-3">
     <div v-reveal class="card lg:col-span-2">

@@ -7,6 +7,8 @@ const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { sta
 const brl = (n: number) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const pct = (n: number) => `${Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 3 })}%`
 const cpfFmt = (v?: string | null) => { const d = (v ?? '').replace(/\D/g, ''); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : (v ?? '—') }
+// Assunto com acento no padrão que todo leitor de e-mail entende (RFC 2047, base64, em pedaços curtos).
+const encodeSubject = (s: string) => /^[\x20-\x7e]*$/.test(s) ? s : (s.match(/[\s\S]{1,12}/gu) ?? []).map(c => `=?UTF-8?B?${btoa(String.fromCharCode(...new TextEncoder().encode(c)))}?=`).join(' ')
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
 
 Deno.serve(async req => {
@@ -25,7 +27,14 @@ Deno.serve(async req => {
     if (error || !s) return json({ error: 'Venda não encontrada' }, 404)
 
     const rows: [string, string][] = [
-      ['Cliente', s.clients?.full_name ?? '—'], ['Proposta', s.proposal_number ?? '—'], ['Comissão', pct(s.insurer_percent)],
+      ['Cliente', s.clients?.full_name ?? '—'], ['CPF', cpfFmt(s.clients?.cpf)], ['Telefone', s.clients?.phone ?? '—'],
+      ['Seguradora', s.insurers?.name ?? '—'], ['Produto', s.products?.name ?? '—'],
+      ['Placa', s.plate ?? '—'],
+      ['Proposta', s.proposal_number ?? '—'], ['Apólice', s.policy_number ?? 'ainda não emitida'],
+      ['Data da venda', String(s.sale_date).split('-').reverse().join('/')],
+      ['Prêmio', brl(s.premium)], ['Percentual da seguradora', pct(s.insurer_percent)],
+      ['Percentual do corretor', pct(s.broker_percent)], ['Comissão líquida', brl(s.net_commission)],
+      ['Origem', s.origin === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria'], ['Status', s.status],
     ]
     const text = rows.map(([k, v]) => `${k}: ${v}`).join('\n')
     const html = `<table cellpadding="6" style="font-family:sans-serif;font-size:14px;border-collapse:collapse">${
@@ -41,14 +50,12 @@ Deno.serve(async req => {
     const smtp = new SMTPClient({ connection: {
       hostname: Deno.env.get('SMTP_HOST') ?? 'smtp.titan.email', port: Number(Deno.env.get('SMTP_PORT') ?? 465), tls: true,
       auth: { username: user, password: Deno.env.get('SMTP_PASS')! } } })
-    // Assunto com acento no padrão que todo leitor de e-mail entende (RFC 2047, base64, em pedaços curtos).
-const encodeSubject = (s: string) => /^[\x20-\x7e]*$/.test(s) ? s : (s.match(/[\s\S]{1,12}/gu) ?? []).map(c => `=?UTF-8?B?${btoa(String.fromCharCode(...new TextEncoder().encode(c)))}?=`).join(' ')
-      to = Deno.env.get('RH_EMAIL')!
+    to = Deno.env.get('RH_EMAIL')!
     // Cópia oculta (BCC) para a própria caixa: prova do envio e, se o endereço do RH estiver errado, o aviso de devolução chega lá.
     // Para desligar: secret BCC_EMAIL='off'. Para outro endereço: BCC_EMAIL='outro@email.com'.
     const bccEnv = Deno.env.get('BCC_EMAIL')
     const bcc = bccEnv === 'off' ? undefined : (bccEnv || user)
-    await smtp.send({ from: user, to, bcc, subject: `Produtor: SUHAI - Ítallo`, content: text, html, attachments })
+    await smtp.send({ from: user, to, bcc, subject: encodeSubject(`Nova venda: ${s.clients?.full_name ?? ''} · ${s.products?.name ?? ''}`), content: text, html, attachments })
     await smtp.close()
     await sb.from('email_log').insert({ sale_id: saleId, to_addr: to, status: 'enviado' })
     return json({ ok: true })
