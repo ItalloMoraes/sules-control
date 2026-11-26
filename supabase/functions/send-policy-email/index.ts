@@ -8,8 +8,8 @@ const brl = (n: number) => Number(n).toLocaleString('pt-BR', { style: 'currency'
 const pct = (n: number) => `${Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 3 })}%`
 const cpfFmt = (v?: string | null) => { const d = (v ?? '').replace(/\D/g, ''); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : (v ?? '—') }
 // Assunto com acento no padrão que todo leitor de e-mail entende (RFC 2047, base64, em pedaços curtos).
-const encodeSubject = (s: string) => /^[\x20-\x7e]*$/.test(s) ? s : (s.match(/[\s\S]{1,12}/gu) ?? []).map(c => `=?UTF-8?B?${btoa(String.fromCharCode(...new TextEncoder().encode(c)))}?=`).join(' ')
-const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
+// Assunto só com letras sem acento: o webmail do Titan não decodifica assunto acentuado vindo deste envio.
+const plainSubject = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '-').replace(/\s+/g, ' ').trim()const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
 
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -55,7 +55,7 @@ Deno.serve(async req => {
     // Para desligar: secret BCC_EMAIL='off'. Para outro endereço: BCC_EMAIL='outro@email.com'.
     const bccEnv = Deno.env.get('BCC_EMAIL')
     const bcc = bccEnv === 'off' ? undefined : (bccEnv || user)
-    await smtp.send({ from: user, to, bcc, subject: encodeSubject(`Nova venda: ${s.clients?.full_name ?? ''} · ${s.products?.name ?? ''}`), content: text, html, attachments })
+    await smtp.send({ from: user, to, bcc, subject: plainSubject(`Nova venda: ${s.clients?.full_name ?? ''} · ${s.products?.name ?? ''}`), content: text, html, attachments })
     await smtp.close()
     await sb.from('email_log').insert({ sale_id: saleId, to_addr: to, status: 'enviado' })
     return json({ ok: true })
