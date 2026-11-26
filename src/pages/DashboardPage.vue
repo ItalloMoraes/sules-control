@@ -69,8 +69,8 @@ const charts = computed(() => ({
     { label: 'Líquida', data: series.value.map(s => s.net), backgroundColor: C.pos, grouped: false, order: 1, barPercentage: 0.5, maxBarThickness: 22 }] } } as ChartConfiguration,
   cancel: { type: 'bar', data: { labels: labels.value, datasets: [
     { label: 'Comissão perdida (R$)', data: keys.value.map(k => round2(data.cancellations.filter(c => c.cancelled_at.startsWith(k)).reduce((a, c) => a + c.net_at_cancellation, 0))), backgroundColor: C.warn, fmt: 'brl' }] } } as unknown as ChartConfiguration,
-  origin: { type: 'doughnut', data: { labels: ['Digital Suhai', 'Venda própria'], datasets: [{ backgroundColor: [C.info, C.gold], data: ['digital_suhai', 'venda_propria'].map(o =>
-    round2(data.sales.filter(s => s.origin === o && s.status !== 'cancelada' && s.sale_date >= f.from && s.sale_date <= f.to).reduce((a, s) => a + s.net_commission, 0))) }] } } as ChartConfiguration,
+  origin: { type: 'doughnut', data: { labels: data.origins.map(o => o.name), datasets: [{ backgroundColor: [C.info, C.gold, C.warn, '#30B0C7', '#B8C1BC', '#AF52DE'], data: data.origins.map(o =>
+    round2(data.sales.filter(s => s.origin === o.code && s.status !== 'cancelada' && s.sale_date >= f.from && s.sale_date <= f.to).reduce((a, s) => a + s.net_commission, 0))) }] } } as ChartConfiguration,
   product: { type: 'doughnut', data: { labels: data.products.map(p => p.name), datasets: [{ backgroundColor: [C.gold, C.info, C.pos, C.warn, C.neg], data: data.products.map(p =>
     data.sales.filter(s => s.product_id === p.id && s.status !== 'cancelada' && s.sale_date >= f.from && s.sale_date <= f.to).length) }] } } as ChartConfiguration,
 }))

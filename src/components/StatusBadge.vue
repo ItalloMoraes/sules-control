@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useData } from '@/stores/data'
 const props = defineProps<{ value: string }>()
 const map: Record<string, [string, string]> = {
   pendente: ['Pendente', 'bg-warn/15 text-warn'],
@@ -18,6 +19,12 @@ const map: Record<string, [string, string]> = {
   digital_suhai: ['Digital Suhai', 'bg-info/15 text-info'],
   venda_propria: ['Venda própria', 'bg-gold/15 text-gold'],
 }
-const v = computed(() => map[props.value] ?? [props.value, 'bg-raise text-mute'])
+const data = useData()
+const PALETTE = ['bg-info/15 text-info', 'bg-gold/15 text-gold', 'bg-warn/15 text-warn', 'bg-pos/15 text-pos']
+const v = computed<[string, string]>(() => {
+  const i = data.origins.findIndex(o => o.code === props.value)   // origens cadastradas (nome editável)
+  if (i >= 0) return [data.origins[i].name, PALETTE[i % PALETTE.length]]
+  return map[props.value] ?? [props.value, 'bg-raise text-mute']
+})
 </script>
 <template><span class="badge" :class="v[1]">{{ v[0] }}</span></template>

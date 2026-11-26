@@ -49,3 +49,11 @@ export function parseBRL(s: string): number {
   const n = parseFloat(t)
   return Number.isFinite(n) ? n : 0
 }
+
+/** Identificador estável a partir do nome (sem acento, minúsculo, com "_"), sem repetir os já usados. */
+export function slugCode(name: string, taken: string[]): string {
+  const base = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'origem'
+  let code = base, n = 2
+  while (taken.includes(code)) code = `${base}_${n++}`
+  return code
+}

@@ -6,7 +6,7 @@ import { useData } from '@/stores/data'
 import { useTheme } from '@/composables/useTheme'
 import { run } from '@/composables/useToast'
 import { nationalHolidayNames } from '@/utils/holidays'
-import { dateBR } from '@/utils/format'
+import { dateBR, slugCode } from '@/utils/format'
 import PageHeader from '@/components/PageHeader.vue'
 import SegTabs from '@/components/SegTabs.vue'
 
@@ -34,6 +34,28 @@ async function setTheme(t: 'dark' | 'light') {
   await supabase.from('settings').update({ theme: t }).eq('user_id', await uid())
 }
 
+// ---- origens da venda: adicionar, renomear e apagar ----
+const newOrigin = ref(''), editId = ref(''), editName = ref('')
+const originUsed = (code: string) => data.sales.filter(s => s.origin === code).length
+async function addOrigin() {
+  const name = newOrigin.value.trim()
+  if (!name) return
+  const code = slugCode(name, data.origins.map(o => o.code))
+  if (await run(async () => { fail((await supabase.from('origins').insert({ code, name })).error); await data.refresh() }, 'Origem cadastrada')) newOrigin.value = ''
+}
+function startEdit(o: { id: string; name: string }) { editId.value = o.id; editName.value = o.name }
+async function saveOrigin() {
+  const name = editName.value.trim()
+  if (!name) return
+  if (await run(async () => { fail((await supabase.from('origins').update({ name }).eq('id', editId.value)).error); await data.refresh() }, 'Origem renomeada')) editId.value = ''
+}
+async function removeOrigin(o: { id: string; code: string; name: string; is_default: boolean }) {
+  if (o.is_default) { alert(`"${o.name}" é uma origem original do sistema e não pode ser apagada (mas pode ser renomeada).`); return }
+  const n = originUsed(o.code)
+  if (n) { alert(`"${o.name}" tem ${n} venda(s) e por isso não pode ser apagada.`); return }
+  if (!confirm(`Apagar a origem "${o.name}"?`)) return
+  await run(async () => { fail((await supabase.from('origins').delete().eq('id', o.id)).error); await data.refresh() }, 'Origem apagada')
+}
 const newInsurer = ref(''), newProduct = ref(''), newHoliday = ref('')
 async function add(table: 'insurers' | 'products', name: string, clear: () => void) {
   if (!name.trim()) return
@@ -104,6 +126,21 @@ const customList = computed(() => [...data.holidays].sort())
     <div v-reveal class="card"><h2 class="mb-2 font-bold">Produtos</h2>
       <ul class="mb-2 text-sm"><li v-for="p in data.products" :key="p.id" class="flex items-center justify-between border-b border-line/60 py-1.5"><span>{{ p.name }}</span><button class="btn btn-danger" @click="remove('products', p.id, p.name)">Apagar</button></li></ul>
       <div class="flex gap-2"><input v-model="newProduct" class="input" placeholder="Novo produto" aria-label="Novo produto" /><button class="btn" @click="add('products', newProduct, () => (newProduct = ''))">Adicionar</button></div></div>
+    <div v-reveal class="card"><h2 class="mb-2 font-bold">Origens da venda</h2>
+      <ul class="mb-2 text-sm">
+        <li v-for="o in data.origins" :key="o.id" class="flex items-center justify-between gap-2 border-b border-line/60 py-1.5">
+          <template v-if="editId === o.id">
+            <input v-model="editName" class="input" aria-label="Nome da origem" @keydown.enter="saveOrigin" @keydown.esc="editId = ''" />
+            <span class="flex shrink-0 gap-1"><button class="btn btn-primary" @click="saveOrigin">Salvar</button><button class="btn" @click="editId = ''">Cancelar</button></span>
+          </template>
+          <template v-else>
+            <span class="min-w-0 truncate">{{ o.name }} <span class="text-xs text-mute">· {{ originUsed(o.code) }} venda(s)</span></span>
+            <span class="flex shrink-0 gap-1"><button class="btn" @click="startEdit(o)">Editar</button><button class="btn btn-danger" @click="removeOrigin(o)">Apagar</button></span>
+          </template>
+        </li>
+      </ul>
+      <div class="flex gap-2"><input v-model="newOrigin" class="input" placeholder="Nova origem (ex.: Indicação)" aria-label="Nova origem" @keydown.enter="addOrigin" /><button class="btn" @click="addOrigin">Adicionar</button></div>
+      <p class="mt-2 text-xs text-mute">As duas origens originais podem ser renomeadas, mas não apagadas. Uma origem com vendas também não pode ser apagada.</p></div>
     <div v-reveal class="card lg:col-span-2"><h2 class="mb-1 font-bold">Feriados</h2>
       <p class="mb-3 text-sm text-mute">Os feriados nacionais entram sozinhos na projeção e no calendário. Cadastre aqui só os que forem extras (municipais ou pontos facultativos que você não trabalha).</p>
       <div class="grid gap-6 md:grid-cols-2">

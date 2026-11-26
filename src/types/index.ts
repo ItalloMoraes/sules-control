@@ -1,5 +1,6 @@
 export type SaleStatus = 'pendente' | 'emitida' | 'cancelada'
-export type Origin = 'digital_suhai' | 'venda_propria'
+export type Origin = string
+export interface OriginRow { id: string; code: string; name: string; is_default: boolean }
 export type ReversalStatus = 'pendente' | 'efetivado' | 'cancelado'
 export type MovementCode = 'N' | 'EN' | 'CN' | 'R' | 'ER' | 'CR'
 export type Classification =

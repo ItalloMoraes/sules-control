@@ -72,7 +72,7 @@ function group(xs: Row[], key: (s: Row) => string) {
 }
 const sections = computed(() => [
   ['Por produto', group(active.value, s => s.products?.name ?? '')],
-  ['Por origem', group(active.value, s => (s.origin === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria'))],
+  ['Por origem', group(active.value, s => data.originName(s.origin))],
   ['Por seguradora', group(active.value, s => s.insurers?.name ?? '')],
 ] as const)
 const byClient = computed(() => group(active.value, s => s.clients?.full_name ?? '').slice(0, 10))
@@ -102,7 +102,7 @@ const weekChart = computed<ChartConfiguration>(() => ({ type: 'bar', data: { lab
   <div class="mb-5 flex flex-wrap gap-2">
     <USelect v-model="f.insurer" class="input w-52" aria-label="Seguradora"><option value="">Todas as seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
     <USelect v-model="f.product" class="input w-52" aria-label="Produto"><option value="">Todos os produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
-    <USelect v-model="f.origin" class="input w-52" aria-label="Origem"><option value="">Todas as origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
+    <USelect v-model="f.origin" class="input w-52" aria-label="Origem"><option value="">Todas as origens</option><option v-for="o in data.origins" :key="o.code" :value="o.code">{{ o.name }}</option></USelect>
   </div>
 
   <div class="mb-4 grid gap-4 lg:grid-cols-3">

@@ -2,10 +2,14 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { nationalHolidayNames, nationalHolidays } from '@/utils/holidays'
 import { supabase, fail } from '@/services/supabase'
-import type { Cancellation, Client, Goal, Insurer, Product, Receipt, Reversal, Sale, Settings } from '@/types'
+import type { Cancellation, Client, Goal, Insurer, Product, Receipt, Reversal, Sale, Settings, OriginRow } from '@/types'
 import type { Dataset } from '@/utils/finance'
 
 /** Conta individual: o volume cabe em memória; os cálculos ficam em utils/ (testáveis). */
+const DEFAULT_ORIGINS: OriginRow[] = [
+  { id: 'd1', code: 'digital_suhai', name: 'Digital Suhai', is_default: true },
+  { id: 'd2', code: 'venda_propria', name: 'Venda própria', is_default: true },
+]
 export const useData = defineStore('data', () => {
   const settings = ref<Settings | null>(null)
   const insurers = ref<Insurer[]>([])
@@ -17,6 +21,8 @@ export const useData = defineStore('data', () => {
   const reversals = ref<Reversal[]>([])
   const goals = ref<Goal[]>([])
   const holidays = ref<string[]>([])
+  const origins = ref<OriginRow[]>(DEFAULT_ORIGINS)
+  const originName = (code: string) => origins.value.find(o => o.code === code)?.name ?? code
   // feriados cadastrados + nacionais (ano passado até 2 anos à frente), usados nos dias úteis da projeção
   const holidayNames = computed(() => {
     const out: Record<string, string> = {}; const y = new Date().getFullYear()
@@ -54,6 +60,14 @@ export const useData = defineStore('data', () => {
     reversals.value = (q[7].data ?? []) as Reversal[]
     goals.value = (q[8].data ?? []) as Goal[]
     holidays.value = (q[9].data ?? []).map((h: { day: string }) => h.day)
+    // origens da venda: se a tabela ainda não existir (migração 012), usa as duas originais sem travar o sistema
+    const og = await supabase.from('origins').select('*').order('created_at')
+    origins.value = og.error ? DEFAULT_ORIGINS : ((og.data ?? []) as OriginRow[])
+    if (!og.error && !origins.value.length && settings.value) {
+      await supabase.from('origins').insert(DEFAULT_ORIGINS.map(({ code, name, is_default }) => ({ code, name, is_default })))
+      const again = await supabase.from('origins').select('*').order('created_at')
+      origins.value = (again.data?.length ? again.data : DEFAULT_ORIGINS) as OriginRow[]
+    }
     loaded.value = true
   }
   async function bootstrap(name: string, email = '') {
@@ -73,7 +87,7 @@ export const useData = defineStore('data', () => {
   const clientName = (id: string) => clients.value.find(c => c.id === id)?.full_name ?? '—'
 
   return {
-    settings, insurers, products, clients, sales, receipts, cancellations, reversals, goals, holidays, holidaySet, holidayNames, leadGoal,
+    settings, insurers, products, clients, sales, receipts, cancellations, reversals, goals, holidays, holidaySet, holidayNames, leadGoal, origins, originName,
     loaded, needsBootstrap, refresh, bootstrap, dataset, receivedBySale, clientName,
   }
 })

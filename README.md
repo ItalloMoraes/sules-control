@@ -15,6 +15,7 @@ Sistema web para corretores de seguro auto: vendas, emissão de apólices, comis
 - **Mapa de vendas por estado** no dashboard (mapa do Brasil com os contornos dos estados; quanto mais vendas, mais verde), com as cidades e a comissão de cada estado.
 - **Desempenho:** projeção do mês, conversão de leads (com meta editável) e metas num só painel.
 - **Agenda** no calendário (atendimentos e recontatos, com aviso às 8h30) e avisos de apólice pendente a cada 6 horas, apenas em horário comercial.
+- **Origens da venda** editáveis em Configurações (adicionar, renomear e apagar).
 - **Notificações** de apólices pendentes (a cada 5 horas), **registro de conversão de leads** e **assistente de chat**.
 - **E-mail automático** com os dados da venda para um destinatário configurável.
 
@@ -49,7 +50,7 @@ supabase/
    npm install
    ```
 2. No Supabase, crie um projeto. Em *Authentication*, desative o cadastro público de novos usuários e crie o seu usuário manualmente.
-3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql`, `005_proposals.sql`, `006_delete_sales.sql`, `007_security.sql`, `008_address.sql`, `009_lead_goal.sql`, `010_agenda.sql` e `011_email_log.sql`.
+3. No *SQL Editor*, rode em ordem os arquivos de `supabase/migrations`: `001_schema.sql`, `002_rules_rls.sql`, `003_seed.sql` e `004_features.sql`, `005_proposals.sql`, `006_delete_sales.sql`, `007_security.sql`, `008_address.sql`, `009_lead_goal.sql`, `010_agenda.sql`, `011_email_log.sql` e `012_origins.sql`.
 4. Crie o arquivo de ambiente e preencha:
    ```bash
    cp .env.example .env

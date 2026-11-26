@@ -21,13 +21,13 @@ const ids = computed(() => new Set(sales.value.map(s => s.id)))
 const table = computed<Table>(() => {
   const m = (n: number) => brl(n)
   if (f.type === 'comercial') {
-    const key = (s: typeof sales.value[number]) => f.groupBy === 'seguradora' ? s.insurers?.name : f.groupBy === 'produto' ? s.products?.name : f.groupBy === 'origem' ? (s.origin === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria') : s.status
+    const key = (s: typeof sales.value[number]) => f.groupBy === 'seguradora' ? s.insurers?.name : f.groupBy === 'produto' ? s.products?.name : f.groupBy === 'origem' ? data.originName(s.origin) : s.status
     const g = new Map<string, { n: number; p: number; b: number; l: number }>()
     for (const s of sales.value) { const k = key(s) ?? '—'; const x = g.get(k) ?? { n: 0, p: 0, b: 0, l: 0 }; x.n++; x.p += s.premium; x.b += s.gross_commission; x.l += s.net_commission; g.set(k, x) }
     return { title: 'Relatório comercial', headers: [`Por ${f.groupBy}`, 'Vendas', 'Prêmios', 'Comissão bruta', 'Comissão líquida'], rows: [...g].map(([k, x]) => [k, x.n, m(x.p), m(x.b), m(x.l)]) }
   }
   if (f.type === 'detalhado') {
-    const origin = (o: string) => (o === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria')
+    const origin = (o: string) => data.originName(o)
     return { title: 'Relatório detalhado', headers: ['Data venda', 'Cliente', 'CPF', 'Produto', 'Seguradora', 'Placa', 'Proposta', 'Apólice', 'Origem', 'Status', 'Prêmio', '% seguradora', 'Comissão bruta', '% corretor', 'Comissão líquida'],
       rows: sales.value.map(s => [dateBR(s.sale_date), s.clients?.full_name ?? '', formatCpf(s.clients?.cpf), s.products?.name ?? '', s.insurers?.name ?? '', s.plate ?? '', s.proposal_number ?? '', s.policy_number ?? '',
         origin(s.origin), s.status, m(s.premium), `${s.insurer_percent}%`, m(s.gross_commission), `${s.broker_percent}%`, m(s.status === 'cancelada' ? 0 : s.net_commission)]) }
@@ -77,7 +77,7 @@ const sub = computed(() => `Período ${dateBR(f.from)} a ${dateBR(f.to)}`)
     <UDateRange v-model:from="f.from" v-model:to="f.to" class="input" aria-label="Período" />
     <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
     <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
-    <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
+    <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option v-for="o in data.origins" :key="o.code" :value="o.code">{{ o.name }}</option></USelect>
     <USelect v-if="f.type === 'comercial'" v-model="f.groupBy" class="input" aria-label="Agrupar"><option value="status">Por status</option><option value="seguradora">Por seguradora</option><option value="produto">Por produto</option><option value="origem">Por origem</option></USelect>
   </div>
   <div class="card overflow-x-auto p-0"><div class="tbl-scroll"><table class="tbl"><thead><tr><th v-for="h in table.headers" :key="h">{{ h }}</th></tr></thead>

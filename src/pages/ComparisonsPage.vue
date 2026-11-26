@@ -20,7 +20,7 @@ const cols = computed<Col[]>(() => {
     case '6': return [S('Últimos 6 meses', r6.from, r6.to)]
     case '12': return [S('Últimos 12 meses', r12.from, r12.to)]
     case 'mesmo_mes': { const ly = monthPeriod(addMonths(curStart, -12).slice(0, 7)); return [S(monthLabel(ly.from), ly.from, ly.to), S(monthLabel(now.from), now.from, now.to)] }
-    case 'origem': return ['digital_suhai', 'venda_propria'].map(o => S(o === 'digital_suhai' ? 'Digital Suhai' : 'Venda própria', r12.from, r12.to, s => s.origin === o))
+    case 'origem': return data.origins.map(o => S(o.name, r12.from, r12.to, s => s.origin === o.code))
     case 'seguradora': return data.insurers.map(i => S(i.name, r12.from, r12.to, s => s.insurer_id === i.id))
     case 'produto': return data.products.filter(p => /moto|auto/i.test(p.name)).map(p => S(p.name, r12.from, r12.to, s => s.product_id === p.id))
   }

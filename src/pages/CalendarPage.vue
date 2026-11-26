@@ -92,7 +92,7 @@ onMounted(() => {
   <div class="card mb-3 grid gap-2 sm:grid-cols-4">
     <USelect v-model="f.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
     <USelect v-model="f.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
-    <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
+    <USelect v-model="f.origin" class="input" aria-label="Origem"><option value="">Origens</option><option v-for="o in data.origins" :key="o.code" :value="o.code">{{ o.name }}</option></USelect>
     <USelect v-model="f.status" class="input" aria-label="Status"><option value="">Status</option><option value="pendente">Pendente</option><option value="emitida">Emitida</option><option value="cancelada">Cancelada</option></USelect>
   </div>
   <div class="mb-2 flex items-center gap-2"><button class="btn" @click="move(-1)" aria-label="Anterior">‹</button><span class="min-w-40 text-center font-display font-bold capitalize">{{ title }}</span><button class="btn" @click="move(1)" aria-label="Próximo">›</button><button class="btn" @click="cursor = todayISO(); selected = todayISO()">Hoje</button></div>

@@ -107,3 +107,10 @@ test('memoji da conversão: deslike, triste, quase lá e joinha conforme a meta'
   assert.equal(leadMood(10, 10).key, 'like')
   assert.equal(leadMood(14, 10).key, 'like')
 })
+
+import { slugCode } from '../format.ts'
+test('código estável da origem a partir do nome', () => {
+  assert.equal(slugCode('Indicação do João', []), 'indicacao_do_joao')
+  assert.equal(slugCode('Venda própria', ['venda_propria']), 'venda_propria_2')
+  assert.equal(slugCode('???', []), 'origem')
+})

@@ -113,7 +113,7 @@ async function save() {
   <div class="card mb-3 filters">
     <input v-model="filters.q" class="input sm:col-span-2" placeholder="Cliente, placa, proposta, apólice" aria-label="Pesquisar vendas" />
     <USelect v-model="filters.status" class="input" aria-label="Status"><option value="">Todos os status</option><option value="pendente">Pendente</option><option value="emitida">Emitida</option><option value="cancelada">Cancelada</option></USelect>
-    <USelect v-model="filters.origin" class="input" aria-label="Origem"><option value="">Todas as origens</option><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect>
+    <USelect v-model="filters.origin" class="input" aria-label="Origem"><option value="">Todas as origens</option><option v-for="o in data.origins" :key="o.code" :value="o.code">{{ o.name }}</option></USelect>
     <USelect v-model="filters.insurer" class="input" aria-label="Seguradora"><option value="">Seguradoras</option><option v-for="i in data.insurers" :key="i.id" :value="i.id">{{ i.name }}</option></USelect>
     <USelect v-model="filters.product" class="input" aria-label="Produto"><option value="">Produtos</option><option v-for="p in data.products" :key="p.id" :value="p.id">{{ p.name }}</option></USelect>
     <UDateRange v-model:from="filters.from" v-model:to="filters.to" class="input" aria-label="Período" />
@@ -167,7 +167,7 @@ async function save() {
       <div><label class="label" for="ip2">Comissão da seguradora (%)</label><MoneyInput id="ip2" v-model="f.insurer_percent" class="input" /></div>
       <div><label class="label" for="bp">Percentual do corretor (%)</label><MoneyInput id="bp" v-model="f.broker_percent" class="input" :disabled="isEdit" />
         <p v-if="isEdit" class="mt-1 text-xs text-mute">Fixo desde o cadastro da venda.</p></div>
-      <div><label class="label">Origem</label><USelect v-model="f.origin" class="input"><option value="digital_suhai">Digital Suhai</option><option value="venda_propria">Venda própria</option></USelect></div>
+      <div><label class="label">Origem</label><USelect v-model="f.origin" class="input"><option v-for="o in data.origins" :key="o.code" :value="o.code">{{ o.name }}</option></USelect></div>
       <div class="sm:col-span-2"><label class="label" for="ob">Observações</label><textarea id="ob" v-model="f.notes" class="input" rows="2" /></div>
       <div v-if="isEdit && financialEdit" class="sm:col-span-2">
         <label class="label" for="jr">Justificativa da alteração (obrigatória)</label><input id="jr" v-model="f.change_reason" class="input" /></div>
